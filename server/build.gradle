@@ -1,0 +1,39 @@
+apply plugin: 'application'
+
+sourceCompatibility = 1.17
+mainClassName = 'com.github.industrialcraft.paperbyte.server.ServerLauncher'
+eclipse.project.name = appName + '-server'
+
+dependencies {
+	implementation project(':shared')
+	implementation 'com.github.industrialcraft:netx:1.0.5'
+	implementation 'com.github.industrialcraft:identifier:fd2e641267'
+	implementation 'org.jetbrains:annotations:23.1.0'
+	implementation 'com.github.Cydhra:EventSystem:1.4'
+	implementation "com.badlogicgames.gdx:gdx-box2d:$gdxVersion"
+}
+
+jar {
+	archiveBaseName.set(appName)
+// the duplicatesStrategy matters starting in Gradle 7.0; this setting works.
+	duplicatesStrategy(DuplicatesStrategy.EXCLUDE)
+	dependsOn configurations.runtimeClasspath
+	from { configurations.runtimeClasspath.collect { it.isDirectory() ? it : zipTree(it) } }
+// these "exclude" lines remove some unnecessary duplicate files in the output JAR.
+	exclude('META-INF/INDEX.LIST', 'META-INF/*.SF', 'META-INF/*.DSA', 'META-INF/*.RSA')
+	dependencies {
+		exclude('META-INF/INDEX.LIST', 'META-INF/maven/**')
+	}
+// setting the manifest makes the JAR runnable.
+	manifest {
+		attributes 'Main-Class': project.mainClassName
+	}
+// this last step may help on some OSes that need extra instruction to make runnable JARs.
+	doLast {
+		file(archiveFile).setExecutable(true, false)
+	}
+}
+
+// Equivalent to the jar task; here for compatibility with gdx-setup.
+task dist(dependsOn: [jar]) {
+}

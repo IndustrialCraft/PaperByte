@@ -1,0 +1,12 @@
+[compileJava, compileTestJava]*.options*.encoding = 'UTF-8'
+eclipse.project.name = appName + '-core'
+
+dependencies {
+	api "com.badlogicgames.gdx:gdx-box2d:$gdxVersion"
+	api "com.badlogicgames.gdx:gdx:$gdxVersion"
+	api project(':shared')
+	implementation 'com.github.industrialcraft:netx:1.0.5'
+	implementation 'com.github.industrialcraft:identifier:fd2e641267'
+	implementation 'org.jetbrains:annotations:23.1.0'
+	implementation 'com.github.Cydhra:EventSystem:1.4'
+}
