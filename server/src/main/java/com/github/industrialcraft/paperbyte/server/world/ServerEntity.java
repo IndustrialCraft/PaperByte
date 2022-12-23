@@ -1,9 +1,13 @@
 package com.github.industrialcraft.paperbyte.server.world;
 
+import com.badlogic.gdx.physics.box2d.Body;
 import com.badlogic.gdx.physics.box2d.World;
 import com.github.industrialcraft.identifier.Identifier;
+import com.github.industrialcraft.paperbyte.common.net.ChangeWorldPacket;
 import com.github.industrialcraft.paperbyte.common.util.Position;
 
+import java.io.DataInputStream;
+import java.io.IOException;
 import java.util.concurrent.atomic.AtomicInteger;
 
 public abstract class ServerEntity {
@@ -13,6 +17,7 @@ public abstract class ServerEntity {
     private Position position;
     private ServerWorld world;
     private boolean isRemoved;
+    private Body physicsBody;
     public ServerEntity(Position position, ServerWorld world) {
         this.entityId = ENTITY_ID_GENERATOR.incrementAndGet();
         this.position = position;
@@ -20,18 +25,48 @@ public abstract class ServerEntity {
         this.isRemoved = false;
         this.world.addEntity(this);
         this.world.worldPacketAnnouncer.announceEntityAdd(this);
+
+        this.physicsBody = createPhysicsBody(world.getPhysicsWorld());
+    }
+    public ServerEntity(DataInputStream stream, ServerWorld world) throws IOException {
+        this.entityId = stream.readInt();
+        this.position = Position.fromStream(stream);
+        this.world = world;
+        this.isRemoved = false;
+        this.world.addEntity(this);
+        this.world.worldPacketAnnouncer.announceEntityAdd(this);
+
+        this.physicsBody = createPhysicsBody(world.getPhysicsWorld());
+    }
+    public Body createPhysicsBody(World world){
+        return null;
+    }
+    public Body getPhysicsBody() {
+        return physicsBody;
     }
     public void tick(){
-
+        if(this.physicsBody != null)
+            this.position = Position.fromVector2(physicsBody.getPosition());
     }
     public void teleport(Position newPosition){
         this.position = newPosition;
+        if(this.physicsBody != null)
+            this.physicsBody.setTransform(position.x(), position.y(), this.physicsBody.getAngle());
         this.world.worldPacketAnnouncer.announceEntityMove(this);
     }
     public void teleport(Position newPosition, ServerWorld newWorld){
         this.position = newPosition;
-        this.world = newWorld;
-        this.world.addEntity(this);
+        if(this.physicsBody != null)
+            this.physicsBody.setTransform(position.x(), position.y(), this.physicsBody.getAngle());
+        if(this.world != newWorld) {
+            world.worldPacketAnnouncer.announceWorldChange(this, world, newWorld);
+            this.world = newWorld;
+            this.world.addEntity(this);
+            if(this instanceof ServerPlayerEntity serverPlayerEntity) {
+                serverPlayerEntity.socketUserData.socketUser.send(new ChangeWorldPacket(), true);
+                world.worldPacketAnnouncer.syncEntitiesToNewPlayer(serverPlayerEntity.socketUserData.socketUser, false);
+            }
+        }
     }
     public Position getPosition(){
         return this.position;

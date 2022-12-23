@@ -27,20 +27,24 @@ public class WorldPacketAnnouncer {
         }
         this.world.parent.getNetworkServer().broadcast(new MoveEntitiesPacket(entityIds, entityPositions), socketUser -> socketUser.<SocketUserData>getUserData().getPlayerEntity().getWorld()==world, true);
     }
-    public void syncEntitiesToNewPlayer(SocketUser newPlayer){
+    public void syncEntitiesToNewPlayer(SocketUser newPlayer, boolean dontSendPlayer){
         ServerPlayerEntity newPlayerEntity = newPlayer.<SocketUserData>getUserData().getPlayerEntity();
         for(ServerEntity entity : world.getEntities()){
-            if(entity == newPlayerEntity)
+            if(dontSendPlayer && entity == newPlayerEntity)
                 continue;
             newPlayer.setUserData(new AddEntityPacket(entity.entityId, world.parent.getEntityRegistry().resolveNetworkId(entity), entity.getPosition()));
         }
     }
     public void announceEntityAdd(ServerEntity entity){
         GameServer server = this.world.parent;
-        server.getNetworkServer().broadcast(new AddEntityPacket(entity.entityId, server.getEntityRegistry().resolveNetworkId(entity), entity.getPosition()), socketUser -> socketUser.<SocketUserData>getUserData().getPlayerEntity().getWorld()==world, false);
+        server.getNetworkServer().broadcast(new AddEntityPacket(entity.entityId, server.getEntityRegistry().resolveNetworkId(entity), entity.getPosition()), socketUser -> socketUser.<SocketUserData>getUserData().getPlayerEntity() != null && socketUser.<SocketUserData>getUserData().getPlayerEntity().getWorld() == world, false);
     }
     public void announceEntityRemove(ServerEntity entity){
         this.world.parent.getNetworkServer().broadcast(new RemoveEntityPacket(entity.entityId), socketUser -> socketUser.<SocketUserData>getUserData().getPlayerEntity().getWorld()==world, false);
+    }
+    public void announceWorldChange(ServerEntity entity, ServerWorld oldWorld, ServerWorld newWorld){
+        this.world.parent.getNetworkServer().broadcast(new AddEntityPacket(entity.entityId, world.parent.getEntityRegistry().resolveNetworkId(entity), entity.getPosition()), socketUser -> socketUser.<SocketUserData>getUserData().getPlayerEntity().getWorld()==newWorld, false);
+        this.world.parent.getNetworkServer().broadcast(new RemoveEntityPacket(entity.entityId), socketUser -> socketUser.<SocketUserData>getUserData().getPlayerEntity().getWorld()==oldWorld, false);
     }
     public void announceEntityMove(ServerEntity entity){
         this.movedEntities.add(entity);

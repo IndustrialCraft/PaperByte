@@ -7,6 +7,7 @@ eclipse.project.name = appName + '-server'
 dependencies {
 	implementation project(':shared')
 	implementation 'com.github.industrialcraft:netx:1.0.5'
+	implementation 'io.netty:netty-all:5.0.0.Alpha2'
 	implementation 'com.github.industrialcraft:identifier:fd2e641267'
 	implementation 'org.jetbrains:annotations:23.1.0'
 	implementation 'com.github.Cydhra:EventSystem:1.4'

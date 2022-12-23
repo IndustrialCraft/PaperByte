@@ -1,10 +1,13 @@
 package com.github.industrialcraft.paperbyte.server.events;
 
+import com.badlogic.gdx.math.Vector2;
 import com.github.industrialcraft.paperbyte.server.GameServer;
 import com.github.industrialcraft.paperbyte.server.world.ServerWorld;
 
-public class WorldTickEvent extends WorldEvent{
-    public WorldTickEvent(GameServer server, ServerWorld world) {
+public class CreateWorldEvent extends WorldEvent{
+    public Vector2 gravity;
+    public CreateWorldEvent(GameServer server, ServerWorld world) {
         super(server, world);
+        this.gravity = new Vector2(0, -9.81f);
     }
 }

@@ -1,6 +1,8 @@
 package com.github.industrialcraft.paperbyte.server.world;
 
+import com.badlogic.gdx.physics.box2d.World;
 import com.github.industrialcraft.paperbyte.server.GameServer;
+import com.github.industrialcraft.paperbyte.server.events.CreateWorldEvent;
 import com.github.industrialcraft.paperbyte.server.events.WorldTickEvent;
 import net.cydhra.eventsystem.EventManager;
 
@@ -15,12 +17,16 @@ public class ServerWorld {
     private final LinkedList<ServerEntity> entitiesToAdd;
     private final HashSet<ServerEntity> entities;
     private boolean isRemoved;
+    private World physicsWorld;
     public ServerWorld(GameServer parent) {
         this.parent = parent;
         this.worldPacketAnnouncer = new WorldPacketAnnouncer(this);
         this.entities = new HashSet<>();
         this.entitiesToAdd = new LinkedList<>();
         this.isRemoved = false;
+        CreateWorldEvent createWorldEvent = new CreateWorldEvent(parent, this);
+        EventManager.callEvent(createWorldEvent);
+        this.physicsWorld = new World(createWorldEvent.gravity, true);
     }
     public void tick(){
         this.entities.addAll(entitiesToAdd);
@@ -29,6 +35,10 @@ public class ServerWorld {
         this.entities.forEach(ServerEntity::tick);
         EventManager.callEvent(new WorldTickEvent(parent, this));
         this.worldPacketAnnouncer.sendPositionUpdates();
+        this.physicsWorld.step(1000f/parent.getTps(), 10, 10);
+    }
+    public World getPhysicsWorld() {
+        return physicsWorld;
     }
     public Set<ServerEntity> getEntities() {
         return Collections.unmodifiableSet(entities);

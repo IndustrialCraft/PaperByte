@@ -11,6 +11,8 @@ public class MessageRegistryCreator {
         messageRegistry.register(4, EntityAnimationPacket.createDescriptor());
         messageRegistry.register(5, MoveEntitiesPacket.createDescriptor());
         messageRegistry.register(6, RemoveEntityPacket.createDescriptor());
+        messageRegistry.register(7, ChangeWorldPacket.createDescriptor());
+        messageRegistry.register(8, GameDataPacket.createDescriptor());
         return messageRegistry;
     }
 }

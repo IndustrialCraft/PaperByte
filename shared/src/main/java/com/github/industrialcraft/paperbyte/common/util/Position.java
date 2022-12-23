@@ -1,10 +1,15 @@
 package com.github.industrialcraft.paperbyte.common.util;
 
+import com.badlogic.gdx.math.Vector2;
+
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
 
 public record Position(float x, float y) {
+    public static Position fromVector2(Vector2 vector){
+        return new Position(vector.x, vector.y);
+    }
     public static Position fromStream(DataInputStream stream) throws IOException {
         return new Position(stream.readFloat(), stream.readFloat());
     }

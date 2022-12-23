@@ -3,9 +3,12 @@ package com.github.industrialcraft.paperbyte.server;
 import com.github.industrialcraft.netx.NetXServer;
 import com.github.industrialcraft.netx.ServerMessage;
 import com.github.industrialcraft.netx.SocketUser;
+import com.github.industrialcraft.paperbyte.common.net.AddEntityPacket;
 import com.github.industrialcraft.paperbyte.common.net.ClientInputPacket;
+import com.github.industrialcraft.paperbyte.common.net.GameDataPacket;
 import com.github.industrialcraft.paperbyte.common.net.MessageRegistryCreator;
 import com.github.industrialcraft.paperbyte.server.events.*;
+import com.github.industrialcraft.paperbyte.server.testmod.TestMod;
 import com.github.industrialcraft.paperbyte.server.world.EntityRegistry;
 import com.github.industrialcraft.paperbyte.server.world.ServerEntity;
 import com.github.industrialcraft.paperbyte.server.world.ServerPlayerEntity;
@@ -24,6 +27,7 @@ public class GameServer extends Thread{
     private int serverAliveTicks;
     private int tps;
     public GameServer() {
+        loadMods();
         this.networkServer = new NetXServer(4321, MessageRegistryCreator.createMessageRegistry());
         this.entityRegistry = new EntityRegistry();
         this.worldsToAdd = new LinkedList<>();
@@ -31,6 +35,14 @@ public class GameServer extends Thread{
         this.serverAliveTicks = 0;
         EventManager.callEvent(new InitializeRegistriesEvent(this, entityRegistry));
         this.entityRegistry.lock();
+    }
+    public ServerWorld createWorld(){
+        ServerWorld world = new ServerWorld(this);
+        this.worldsToAdd.add(world);
+        return world;
+    }
+    public void loadMods(){
+        new TestMod();
     }
     @Override
     public void run() {
@@ -70,6 +82,7 @@ public class GameServer extends Thread{
     private ServerMessage.Visitor SERVER_MESSAGE_VISITOR = new ServerMessage.Visitor() {
         @Override
         public void connect(SocketUser user) {
+            user.send(new GameDataPacket(entityRegistry.getRegisteredEntities()));
             SocketUserData socketUserData = new SocketUserData(user);
             user.setUserData(socketUserData);
             PlayerJoinEvent joinEvent = new PlayerJoinEvent(GameServer.this, socketUserData);
@@ -82,9 +95,10 @@ public class GameServer extends Thread{
                 user.disconnect();
                 throw new IllegalStateException("player spawn world not specified");
             }
-            ServerPlayerEntity playerEntity = joinEvent.playerSupplier.apply(joinEvent);
+            ServerPlayerEntity playerEntity = joinEvent.playerSupplier.get();
             socketUserData.setPlayerEntity(playerEntity);
-            playerEntity.getWorld().worldPacketAnnouncer.syncEntitiesToNewPlayer(user);
+            playerEntity.getWorld().worldPacketAnnouncer.syncEntitiesToNewPlayer(user, true);
+            user.send(new AddEntityPacket(playerEntity.entityId, getEntityRegistry().resolveNetworkId(playerEntity), playerEntity.getPosition()));
         }
         @Override
         public void disconnect(SocketUser user) {

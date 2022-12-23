@@ -9,10 +9,11 @@ import com.github.industrialcraft.paperbyte.server.world.ServerWorld;
 
 import java.util.ArrayList;
 import java.util.function.Function;
+import java.util.function.Supplier;
 
 public class PlayerJoinEvent extends ServerEvent {
     public final SocketUserData socketUserData;
-    public Function<PlayerJoinEvent, ServerPlayerEntity> playerSupplier;
+    public Supplier<ServerPlayerEntity> playerSupplier;
     public ServerWorld world;
     public Position position;
     public final ArrayList<Object> joinData;

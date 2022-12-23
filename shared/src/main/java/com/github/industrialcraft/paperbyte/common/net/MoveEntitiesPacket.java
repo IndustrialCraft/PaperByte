@@ -9,8 +9,8 @@ import java.io.IOException;
 import java.util.ArrayList;
 
 public class MoveEntitiesPacket {
-    private final ArrayList<Integer> entityIds;
-    private final ArrayList<Position> entityPositions;
+    public final ArrayList<Integer> entityIds;
+    public final ArrayList<Position> entityPositions;
     public MoveEntitiesPacket(ArrayList<Integer> entityIds, ArrayList<Position> entityPositions) {
         this.entityIds = entityIds;
         this.entityPositions = entityPositions;
