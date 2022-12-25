@@ -7,4 +7,5 @@ dependencies {
     implementation 'org.jetbrains:annotations:23.1.0'
     implementation 'com.github.Cydhra:EventSystem:1.4'
     api "com.badlogicgames.gdx:gdx-box2d:$gdxVersion"
+    implementation "com.badlogicgames.gdx:gdx-backend-headless:$gdxVersion"
 }

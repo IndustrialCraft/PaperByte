@@ -38,7 +38,7 @@ public class PaperByteMain extends ApplicationAdapter {
 		this.batch = new SpriteBatch();
 		this.shapeRenderer = new ShapeRenderer();
 		this.clientEntities = new HashMap<>();
-		this.camera = new OrthographicCamera();
+		this.camera = new OrthographicCamera(Gdx.graphics.getWidth(), Gdx.graphics.getHeight());
 		this.camera.update();
 		this.networkClient = new NetXClient("localhost", 4321, MessageRegistryCreator.createMessageRegistry());
 		this.networkClient.start();
@@ -129,6 +129,12 @@ public class PaperByteMain extends ApplicationAdapter {
 		while(networkClient.visitMessage(CLIENT_MESSAGE_VISITOR));
 	}
 
+	@Override
+	public void resize(int width, int height) {
+		this.camera.viewportWidth = width;
+		this.camera.viewportHeight = height;
+		this.camera.update();
+	}
 	@Override
 	public void dispose() {
 		networkClient.disconnect();

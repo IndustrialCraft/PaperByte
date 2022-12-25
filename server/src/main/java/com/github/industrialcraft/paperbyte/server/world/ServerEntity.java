@@ -59,6 +59,10 @@ public abstract class ServerEntity {
         if(this.physicsBody != null)
             this.physicsBody.setTransform(position.x(), position.y(), this.physicsBody.getAngle());
         if(this.world != newWorld) {
+            if(physicsBody != null) {
+                world.getPhysicsWorld().destroyBody(physicsBody);
+                this.physicsBody = createPhysicsBody(newWorld.getPhysicsWorld());
+            }
             world.worldPacketAnnouncer.announceWorldChange(this, world, newWorld);
             this.world = newWorld;
             this.world.addEntity(this);
