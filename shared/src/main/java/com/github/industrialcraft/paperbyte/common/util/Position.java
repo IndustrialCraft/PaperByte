@@ -7,6 +7,9 @@ import java.io.DataOutputStream;
 import java.io.IOException;
 
 public record Position(float x, float y) {
+    public Position add(float x, float y){
+        return new Position(this.x+x, this.y+y);
+    }
     public static Position fromVector2(Vector2 vector){
         return new Position(vector.x, vector.y);
     }

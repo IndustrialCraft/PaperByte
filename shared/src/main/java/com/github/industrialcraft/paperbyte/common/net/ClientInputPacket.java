@@ -87,6 +87,15 @@ public class ClientInputPacket {
         for(int i = 0;i < keys.length;i++)
             stream.writeBoolean(keys[i]);
     }
+    public boolean isKeyDown(char ch){
+        return keys[getKey(ch)];
+    }
+    public static int getKey(char ch){
+        ch = Character.toLowerCase(ch);
+        if(Character.isLetter(ch))
+            return ch-'a';
+        return -1;
+    }
     public static MessageRegistry.MessageDescriptor<ClientInputPacket> createDescriptor(){
         return new MessageRegistry.MessageDescriptor<>(ClientInputPacket.class, stream -> new ClientInputPacket(new DataInputStream(stream)), (obj, stream) -> obj.toStream(new DataOutputStream(stream)));
     }

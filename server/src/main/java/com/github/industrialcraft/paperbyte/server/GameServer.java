@@ -58,7 +58,7 @@ public class GameServer extends Thread{
             this.worlds.forEach(ServerWorld::tick);
             EventManager.callEvent(new GameTickEvent(this));
             processNetworkMessages();
-            while(System.currentTimeMillis()<serverStartTime+((serverAliveTicks+1)*(1000f/tps))){
+            while(System.currentTimeMillis()<serverStartTime+((serverAliveTicks+1)*(1000/tps))){
                 processNetworkMessages();
                 try {
                     Thread.sleep(1);

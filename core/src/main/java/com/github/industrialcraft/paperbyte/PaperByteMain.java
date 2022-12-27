@@ -114,8 +114,8 @@ public class PaperByteMain extends ApplicationAdapter {
 				}
 			}
 			if(msg instanceof CameraUpdatePacket cameraUpdatePacket){
-				camera.position.x = cameraUpdatePacket.x;
-				camera.position.y = cameraUpdatePacket.y;
+				camera.position.x = cameraUpdatePacket.x * PaperByteMain.METER_TO_PIXEL;
+				camera.position.y = cameraUpdatePacket.y * PaperByteMain.METER_TO_PIXEL;
 				camera.zoom = cameraUpdatePacket.zoom;
 				camera.update();
 			}

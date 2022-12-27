@@ -21,7 +21,24 @@ public class TestPlayer extends ServerPlayerEntity {
     }
     @Override
     public void handleClientInput(ClientInputPacket message) {
-
+        float speed = 0.05f;
+        float xMod = 0;
+        float yMod = 0;
+        if(message.isKeyDown('w')){
+            yMod++;
+        }
+        if(message.isKeyDown('s')){
+            yMod--;
+        }
+        if(message.isKeyDown('a')){
+            xMod--;
+        }
+        if(message.isKeyDown('d')){
+            xMod++;
+        }
+        if(xMod != 0 || yMod != 0){
+            teleport(getPosition().add(xMod*speed, yMod*speed));
+        }
     }
     @Override
     public Identifier getIdentifier() {
