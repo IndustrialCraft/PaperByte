@@ -15,7 +15,7 @@ allprojects {
 	apply plugin: 'idea'
 	apply plugin: 'java-library'
 	version = "1.0.0"
-	group = 'com.github.industrialcraft.paperbyte'
+	group = 'com.github.IndustrialCraft.PaperByte'
 	sourceCompatibility = 1.17
 }
 
