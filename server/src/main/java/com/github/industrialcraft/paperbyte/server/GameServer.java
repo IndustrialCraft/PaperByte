@@ -8,7 +8,6 @@ import com.github.industrialcraft.paperbyte.common.net.ClientInputPacket;
 import com.github.industrialcraft.paperbyte.common.net.GameDataPacket;
 import com.github.industrialcraft.paperbyte.common.net.MessageRegistryCreator;
 import com.github.industrialcraft.paperbyte.server.events.*;
-import com.github.industrialcraft.paperbyte.server.testmod.TestMod;
 import com.github.industrialcraft.paperbyte.server.world.EntityRegistry;
 import com.github.industrialcraft.paperbyte.server.world.ServerEntity;
 import com.github.industrialcraft.paperbyte.server.world.ServerPlayerEntity;
@@ -49,7 +48,6 @@ public class GameServer extends Thread{
         this.pluginManager = new DefaultPluginManager();
         this.pluginManager.loadPlugins();
         this.pluginManager.startPlugins();
-        new TestMod();
     }
     @Override
     public void run() {

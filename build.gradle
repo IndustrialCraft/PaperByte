@@ -14,15 +14,14 @@ allprojects {
 	apply plugin: 'eclipse'
 	apply plugin: 'idea'
 	apply plugin: 'java-library'
-	version = "1.0.0"
+	version = "1.0"
 	group = 'com.github.IndustrialCraft.PaperByte'
 	sourceCompatibility = 1.17
 }
 
 subprojects {
-	apply plugin: 'maven-publish'
 	apply plugin: 'java'
-	version = '1.0.0'
+	apply plugin: 'maven-publish'
 	ext.appName = 'PaperByte'
 	repositories {
 		mavenCentral()
