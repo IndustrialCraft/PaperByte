@@ -30,6 +30,7 @@ configure(subprojects - project(':android')) {
 
 subprojects {
 	apply plugin: 'maven-publish'
+	apply plugin: 'java'
 	version = '1.0.0'
 	ext.appName = 'PaperByte'
 	repositories {
@@ -40,6 +41,10 @@ subprojects {
 		maven { url 'https://oss.sonatype.org/content/repositories/snapshots/' }
 		maven { url 'https://s01.oss.sonatype.org/content/repositories/snapshots/' }
 		maven { url 'https://jitpack.io' }
+	}
+	java {
+		withSourcesJar()
+		withJavadocJar()
 	}
 	publishing {
 		publications {
