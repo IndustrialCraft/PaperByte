@@ -33,6 +33,8 @@ subprojects {
 		maven { url 'https://s01.oss.sonatype.org/content/repositories/snapshots/' }
 		maven { url 'https://jitpack.io' }
 	}
+	sourceCompatibility = 1.17
+	targetCompatibility = 1.17
 	java {
 		withSourcesJar()
 		withJavadocJar()
