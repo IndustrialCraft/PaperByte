@@ -9,18 +9,14 @@ buildscript {
 		maven { url 'https://s01.oss.sonatype.org/content/repositories/snapshots/' }
 	}
 }
-
 allprojects {
 	apply plugin: 'eclipse'
 	apply plugin: 'idea'
-	apply plugin: 'java-library'
 	version = "1.0"
 	group = 'com.github.IndustrialCraft.PaperByte'
-	sourceCompatibility = 1.17
 }
-
 subprojects {
-	apply plugin: 'java'
+	apply plugin: 'java-library'
 	apply plugin: 'maven-publish'
 	ext.appName = 'PaperByte'
 	repositories {
@@ -44,6 +40,7 @@ subprojects {
 				groupId project.group
 				artifactId project.name
 				version project.version
+				from components.java
 			}
 		}
 	}
