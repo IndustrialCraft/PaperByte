@@ -8,24 +8,14 @@ buildscript {
 		maven { url 'https://oss.sonatype.org/content/repositories/snapshots/' }
 		maven { url 'https://s01.oss.sonatype.org/content/repositories/snapshots/' }
 	}
-	dependencies {
-		classpath "com.android.tools.build:gradle:$androidPluginVersion"
-	}
 }
 
 allprojects {
 	apply plugin: 'eclipse'
 	apply plugin: 'idea'
+	apply plugin: 'java-library'
 	version = "1.0.0"
 	group = 'com.github.industrialcraft.paperbyte'
-}
-
-configure(subprojects - project(':android')) {
-	apply plugin: 'java-library'
-	sourceCompatibility = 1.17
-	compileJava {
-		options.incremental = true
-	}
 }
 
 subprojects {
