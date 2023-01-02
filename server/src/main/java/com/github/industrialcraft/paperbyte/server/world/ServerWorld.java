@@ -1,8 +1,10 @@
 package com.github.industrialcraft.paperbyte.server.world;
 
-import com.badlogic.gdx.physics.box2d.World;
+import com.badlogic.gdx.physics.box2d.*;
 import com.github.industrialcraft.paperbyte.server.GameServer;
+import com.github.industrialcraft.paperbyte.server.events.BeginContactEvent;
 import com.github.industrialcraft.paperbyte.server.events.CreateWorldEvent;
+import com.github.industrialcraft.paperbyte.server.events.EndContactEvent;
 import com.github.industrialcraft.paperbyte.server.events.WorldTickEvent;
 import net.cydhra.eventsystem.EventManager;
 
@@ -27,6 +29,24 @@ public class ServerWorld {
         CreateWorldEvent createWorldEvent = new CreateWorldEvent(parent, this);
         EventManager.callEvent(createWorldEvent);
         this.physicsWorld = new World(createWorldEvent.gravity, true);
+        this.physicsWorld.setContactListener(new ContactListener() {
+            @Override
+            public void beginContact(Contact contact) {
+                EventManager.callEvent(new BeginContactEvent(parent, ServerWorld.this, contact));
+            }
+            @Override
+            public void endContact(Contact contact) {
+                EventManager.callEvent(new EndContactEvent(parent, ServerWorld.this, contact));
+            }
+            @Override
+            public void preSolve(Contact contact, Manifold oldManifold) {
+
+            }
+            @Override
+            public void postSolve(Contact contact, ContactImpulse impulse) {
+
+            }
+        });
     }
     public void tick(){
         this.entities.addAll(entitiesToAdd);
@@ -35,7 +55,7 @@ public class ServerWorld {
         this.entities.forEach(ServerEntity::tick);
         EventManager.callEvent(new WorldTickEvent(parent, this));
         this.worldPacketAnnouncer.sendPositionUpdates();
-        this.physicsWorld.step(1000f/parent.getTps(), 10, 10);
+        this.physicsWorld.step(1f/parent.getTps(), 10, 10);
     }
     public World getPhysicsWorld() {
         return physicsWorld;

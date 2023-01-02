@@ -14,7 +14,7 @@ public class ClientEntity {
         this.position = position;
     }
     public void render(SpriteBatch batch){
-        System.out.println("rendering: " + entityId + ":" + type.toString());
+        //System.out.println("rendering: " + entityId + ":" + type.toString());
         PaperByteMain.FONT.draw(batch, ""+entityId, position.x() * PaperByteMain.METER_TO_PIXEL, position.y() * PaperByteMain.METER_TO_PIXEL);
         PaperByteMain.FONT.draw(batch, type.toString(), position.x() * PaperByteMain.METER_TO_PIXEL, (position.y()+1) * PaperByteMain.METER_TO_PIXEL);
     }

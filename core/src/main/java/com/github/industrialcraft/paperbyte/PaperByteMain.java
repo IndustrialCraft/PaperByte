@@ -22,7 +22,7 @@ import java.util.Map;
 
 /** {@link com.badlogic.gdx.ApplicationListener} implementation shared by all platforms. */
 public class PaperByteMain extends ApplicationAdapter {
-	public static float METER_TO_PIXEL = 100;
+	public static float METER_TO_PIXEL = 10;
 	public static BitmapFont FONT;
 
 	private SpriteBatch batch;
@@ -118,6 +118,7 @@ public class PaperByteMain extends ApplicationAdapter {
 				camera.position.y = cameraUpdatePacket.y * PaperByteMain.METER_TO_PIXEL;
 				camera.zoom = cameraUpdatePacket.zoom;
 				camera.update();
+				Gdx.graphics.setTitle("x: " + camera.position.x + " y: " + camera.position.y);
 			}
 		}
 		@Override

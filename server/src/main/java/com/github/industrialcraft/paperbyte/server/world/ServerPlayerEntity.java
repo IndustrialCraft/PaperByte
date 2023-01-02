@@ -16,10 +16,6 @@ public abstract class ServerPlayerEntity extends ServerEntity {
         this.socketUserData = socketUserData;
         this.cameraZoom = 1;
     }
-    public ServerPlayerEntity(DataInputStream stream, ServerWorld world, SocketUserData socketUserData) throws IOException {
-        super(stream, world);
-        this.socketUserData = socketUserData;
-    }
     @Override
     public void teleport(Position newPosition) {
         super.teleport(newPosition);

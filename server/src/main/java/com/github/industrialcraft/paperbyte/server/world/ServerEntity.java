@@ -27,6 +27,10 @@ public abstract class ServerEntity {
         this.world.worldPacketAnnouncer.announceEntityAdd(this);
 
         this.physicsBody = createPhysicsBody(world.getPhysicsWorld());
+        if(this.physicsBody != null) {
+            this.physicsBody.setTransform(position.x(), position.y(), this.physicsBody.getAngle());
+            this.physicsBody.setUserData(this);
+        }
     }
     public ServerEntity(DataInputStream stream, ServerWorld world) throws IOException {
         this.entityId = stream.readInt();
@@ -37,6 +41,8 @@ public abstract class ServerEntity {
         this.world.worldPacketAnnouncer.announceEntityAdd(this);
 
         this.physicsBody = createPhysicsBody(world.getPhysicsWorld());
+        if(this.physicsBody != null)
+            this.physicsBody.setTransform(position.x(), position.y(), this.physicsBody.getAngle());
     }
     public Body createPhysicsBody(World world){
         return null;
@@ -45,8 +51,12 @@ public abstract class ServerEntity {
         return physicsBody;
     }
     public void tick(){
-        if(this.physicsBody != null)
+        if(this.physicsBody != null) {
             this.position = Position.fromVector2(physicsBody.getPosition());
+            this.world.worldPacketAnnouncer.announceEntityMove(this);
+            if(this instanceof ServerPlayerEntity serverPlayerEntity)
+                serverPlayerEntity.updateCamera();
+        }
     }
     public void teleport(Position newPosition){
         this.position = newPosition;

@@ -14,6 +14,9 @@ import com.github.industrialcraft.paperbyte.server.world.ServerEntity;
 import com.github.industrialcraft.paperbyte.server.world.ServerPlayerEntity;
 import com.github.industrialcraft.paperbyte.server.world.ServerWorld;
 import net.cydhra.eventsystem.EventManager;
+import org.pf4j.DefaultPluginManager;
+import org.pf4j.PluginManager;
+import org.pf4j.PluginWrapper;
 
 import java.util.ArrayList;
 import java.util.LinkedList;
@@ -26,6 +29,7 @@ public class GameServer extends Thread{
     private long serverStartTime;
     private int serverAliveTicks;
     private int tps;
+    private PluginManager pluginManager;
     public GameServer() {
         loadMods();
         this.networkServer = new NetXServer(4321, MessageRegistryCreator.createMessageRegistry());
@@ -42,6 +46,9 @@ public class GameServer extends Thread{
         return world;
     }
     public void loadMods(){
+        this.pluginManager = new DefaultPluginManager();
+        this.pluginManager.loadPlugins();
+        this.pluginManager.startPlugins();
         new TestMod();
     }
     @Override

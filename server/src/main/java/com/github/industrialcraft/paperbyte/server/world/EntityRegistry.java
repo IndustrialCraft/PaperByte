@@ -3,6 +3,7 @@ package com.github.industrialcraft.paperbyte.server.world;
 import com.github.industrialcraft.identifier.Identifier;
 
 import java.io.DataInputStream;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -12,7 +13,7 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 
 public class EntityRegistry {
-    private final HashMap<Identifier, BiFunction<DataInputStream,ServerWorld,ServerEntity>> entityConstructors;
+    private final HashMap<Identifier, EntityFromStreamCreator> entityConstructors;
     private final HashMap<Identifier, Integer> networkIds;
     private Map<Integer,Identifier> reversedNetworkIds;
     private int entityNetworkIdGenerator;
@@ -27,7 +28,7 @@ public class EntityRegistry {
         this.locked = true;
         this.reversedNetworkIds = Collections.unmodifiableMap(networkIds.entrySet().stream().collect(Collectors.toMap(Map.Entry::getValue, Map.Entry::getKey)));
     }
-    public void register(Identifier identifier, BiFunction<DataInputStream,ServerWorld,ServerEntity> creator){
+    public void register(Identifier identifier, EntityFromStreamCreator creator){
         if(locked)
             throw new IllegalStateException("registry already locked");
         if(entityConstructors.containsKey(identifier))
@@ -40,7 +41,11 @@ public class EntityRegistry {
         var creator = entityConstructors.get(identifier);
         if(creator == null)
             throw new IllegalStateException("Entity " + identifier + " is not registered");
-        return creator.apply(data, world);
+        try {
+            return creator.create(data, world);
+        } catch (IOException e) {
+            throw new IllegalStateException("Entity " + identifier + " couldnt be deserialized", e);
+        }
     }
     public int resolveNetworkId(Identifier identifier){
         Integer entityId = this.networkIds.get(identifier);
@@ -53,5 +58,8 @@ public class EntityRegistry {
     }
     public Map<Integer,Identifier> getRegisteredEntities(){
         return this.reversedNetworkIds;
+    }
+    public interface EntityFromStreamCreator{
+        ServerEntity create(DataInputStream stream, ServerWorld world) throws IOException;
     }
 }
