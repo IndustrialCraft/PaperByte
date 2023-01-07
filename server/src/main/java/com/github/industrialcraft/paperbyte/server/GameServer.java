@@ -15,14 +15,13 @@ import com.github.industrialcraft.paperbyte.server.world.ServerWorld;
 import net.cydhra.eventsystem.EventManager;
 import org.pf4j.DefaultPluginManager;
 import org.pf4j.PluginManager;
+import org.pf4j.PluginWrapper;
 
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.LinkedList;
-import java.util.zip.ZipInputStream;
+import java.util.stream.Collectors;
 
 public class GameServer extends Thread{
     private final NetXServer networkServer;
@@ -34,7 +33,9 @@ public class GameServer extends Thread{
     private int tps;
     private PluginManager pluginManager;
     private RenderDataBundler renderDataBundler;
+    public final Logger logger;
     public GameServer() {
+        this.logger = new Logger(this);
         loadMods();
         this.networkServer = new NetXServer(4321, MessageRegistryCreator.createMessageRegistry());
         this.entityRegistry = new EntityRegistry();
@@ -42,8 +43,10 @@ public class GameServer extends Thread{
         this.worlds = new ArrayList<>();
         this.serverAliveTicks = 0;
         EventManager.callEvent(new InitializeRegistriesEvent(this, entityRegistry));
+        this.entityRegistry.register(Identifier.of("aaa","bbb"), new EntityRegistry.EntityRegistryData((stream, world) -> null, (position, world) -> null, () -> null));
         this.entityRegistry.lock();
-        this.renderDataBundler = new RenderDataBundler();
+        this.logger.info("Loaded %s entities", this.entityRegistry.getRegisteredEntities().size());
+        this.renderDataBundler = new RenderDataBundler(this);
         this.entityRegistry.registerToBundler(renderDataBundler);
         try {
             FileOutputStream stream = new FileOutputStream("out.zip");
@@ -62,6 +65,7 @@ public class GameServer extends Thread{
         this.pluginManager = new DefaultPluginManager();
         this.pluginManager.loadPlugins();
         this.pluginManager.startPlugins();
+        this.logger.info("Loaded %s mods[%s]", this.pluginManager.getPlugins().size(), this.pluginManager.getPlugins().stream().map(PluginWrapper::getPluginId).collect(Collectors.joining(",")));
     }
     @Override
     public void run() {

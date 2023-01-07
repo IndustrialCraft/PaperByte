@@ -3,19 +3,18 @@ package com.github.industrialcraft.paperbyte.server;
 import com.github.industrialcraft.identifier.Identifier;
 import com.github.industrialcraft.paperbyte.server.world.EntityRegistry;
 
-import java.io.File;
 import java.io.IOException;
 import java.io.OutputStream;
-import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.zip.ZipEntry;
-import java.util.zip.ZipFile;
 import java.util.zip.ZipInputStream;
 import java.util.zip.ZipOutputStream;
 
 public class RenderDataBundler {
     private final HashMap<Identifier, ZipInputStream> renderData;
-    public RenderDataBundler() {
+    private final GameServer server;
+    public RenderDataBundler(GameServer server) {
+        this.server = server;
         this.renderData = new HashMap<>();
     }
     public void addEntity(Identifier id, EntityRegistry.EntityRegistryData registryData){
@@ -26,8 +25,10 @@ public class RenderDataBundler {
     public void createZip(OutputStream stream) throws IOException {
         ZipOutputStream zip = new ZipOutputStream(stream);
         for(var e : renderData.entrySet()){
-            if(e.getValue() == null)
+            if(e.getValue() == null) {
+                server.logger.warn("Entity %s registered without renderdata", e.getKey());
                 continue;
+            }
             ZipEntry entry;
             while((entry = e.getValue().getNextEntry()) != null){
                 zip.putNextEntry(new ZipEntry(e.getKey() + "/" + entry.getName()));
