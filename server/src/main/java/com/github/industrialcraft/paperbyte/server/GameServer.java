@@ -43,7 +43,6 @@ public class GameServer extends Thread{
         this.worlds = new ArrayList<>();
         this.serverAliveTicks = 0;
         EventManager.callEvent(new InitializeRegistriesEvent(this, entityRegistry));
-        this.entityRegistry.register(Identifier.of("aaa","bbb"), new EntityRegistry.EntityRegistryData((stream, world) -> null, (position, world) -> null, () -> null));
         this.entityRegistry.lock();
         this.logger.info("Loaded %s entities", this.entityRegistry.getRegisteredEntities().size());
         this.renderDataBundler = new RenderDataBundler(this);
