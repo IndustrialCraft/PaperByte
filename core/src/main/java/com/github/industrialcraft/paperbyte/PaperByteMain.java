@@ -3,6 +3,7 @@ package com.github.industrialcraft.paperbyte;
 import com.badlogic.gdx.ApplicationAdapter;
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.Input;
+import com.badlogic.gdx.files.FileHandle;
 import com.badlogic.gdx.graphics.Camera;
 import com.badlogic.gdx.graphics.GL20;
 import com.badlogic.gdx.graphics.OrthographicCamera;
@@ -10,15 +11,22 @@ import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.BitmapFont;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
+import com.github.industrialcraft.folder.Node;
+import com.github.industrialcraft.folder.SaverLoader;
 import com.github.industrialcraft.identifier.Identifier;
 import com.github.industrialcraft.netx.ClientMessage;
 import com.github.industrialcraft.netx.NetXClient;
 import com.github.industrialcraft.paperbyte.common.net.*;
+import com.github.industrialcraft.paperbyte.common.util.NonClosingInputStreamWrapper;
+import com.google.gson.JsonParser;
 import org.jetbrains.annotations.Nullable;
 
+import java.io.*;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipInputStream;
 
 /** {@link com.badlogic.gdx.ApplicationListener} implementation shared by all platforms. */
 public class PaperByteMain extends ApplicationAdapter {
@@ -30,6 +38,7 @@ public class PaperByteMain extends ApplicationAdapter {
 	private NetXClient networkClient;
 	private OrthographicCamera camera;
 	private HashMap<Integer,ClientEntity> clientEntities;
+	private Map<Identifier, Node> entityNodes;
 	private Map<Integer, Identifier> entityRegistry;
 	@Override
 	public void create() {
@@ -42,11 +51,16 @@ public class PaperByteMain extends ApplicationAdapter {
 		this.camera.update();
 		this.networkClient = new NetXClient("localhost", 4321, MessageRegistryCreator.createMessageRegistry());
 		this.networkClient.start();
+		try {
+			loadNodes(new BufferedInputStream(new FileInputStream(new File("out.zip"))));
+		} catch (IOException e) {
+			throw new RuntimeException(e);
+		}
 	}
 
 	@Override
 	public void render() {
-		if(networkClient.getClientChannel() == null)
+		if(networkClient.getClientChannel() == null || this.entityNodes == null)
 			return;
 		Gdx.gl.glClearColor(0.15f, 0.15f, 0.2f, 1f);
 		Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT);
@@ -126,10 +140,34 @@ public class PaperByteMain extends ApplicationAdapter {
 			ClientMessage.Visitor.super.exception(user, exception);
 		}
 	};
+	@SuppressWarnings("StatementWithEmptyBody")
 	public void processNetworkMessages(){
 		while(networkClient.visitMessage(CLIENT_MESSAGE_VISITOR));
 	}
 
+	public void loadNodes(InputStream stream) throws IOException {
+		HashMap<String,Texture> textures = new HashMap<>();
+		HashMap<String,String> renderData = new HashMap<>();
+		ZipInputStream zip = new ZipInputStream(stream);
+		this.entityNodes = new HashMap<>();
+		ZipEntry entry;
+		while((entry = zip.getNextEntry()) != null){
+			if(entry.getName().endsWith(".png")){
+				textures.put(entry.getName(), new Texture(new FileHandle(""){
+					@Override
+					public InputStream read() {
+						return new NonClosingInputStreamWrapper(zip);
+					}
+				}));
+			} else if(entry.getName().endsWith(".json")){
+				renderData.put(entry.getName(), new String(zip.readAllBytes()));
+			}
+		}
+		for(var e : renderData.entrySet()){
+			Identifier id = Identifier.parse(e.getKey().split("/")[0]);
+			this.entityNodes.put(id, SaverLoader.fromJson(JsonParser.parseString(e.getValue()).getAsJsonObject(), s -> textures.get(id + "/" + s + ".png")));
+		}
+	}
 	@Override
 	public void resize(int width, int height) {
 		this.camera.viewportWidth = width;

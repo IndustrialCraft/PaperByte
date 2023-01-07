@@ -1,5 +1,6 @@
 package com.github.industrialcraft.paperbyte.server;
 
+import com.github.industrialcraft.identifier.Identifier;
 import com.github.industrialcraft.netx.NetXServer;
 import com.github.industrialcraft.netx.ServerMessage;
 import com.github.industrialcraft.netx.SocketUser;
@@ -9,16 +10,19 @@ import com.github.industrialcraft.paperbyte.common.net.GameDataPacket;
 import com.github.industrialcraft.paperbyte.common.net.MessageRegistryCreator;
 import com.github.industrialcraft.paperbyte.server.events.*;
 import com.github.industrialcraft.paperbyte.server.world.EntityRegistry;
-import com.github.industrialcraft.paperbyte.server.world.ServerEntity;
 import com.github.industrialcraft.paperbyte.server.world.ServerPlayerEntity;
 import com.github.industrialcraft.paperbyte.server.world.ServerWorld;
 import net.cydhra.eventsystem.EventManager;
 import org.pf4j.DefaultPluginManager;
 import org.pf4j.PluginManager;
-import org.pf4j.PluginWrapper;
 
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.LinkedList;
+import java.util.zip.ZipInputStream;
 
 public class GameServer extends Thread{
     private final NetXServer networkServer;
@@ -29,15 +33,32 @@ public class GameServer extends Thread{
     private int serverAliveTicks;
     private int tps;
     private PluginManager pluginManager;
+    private RenderDataBundler renderDataBundler;
     public GameServer() {
         loadMods();
         this.networkServer = new NetXServer(4321, MessageRegistryCreator.createMessageRegistry());
         this.entityRegistry = new EntityRegistry();
+        this.entityRegistry.register(Identifier.of("aaa","bbb"), new EntityRegistry.EntityRegistryData(null, null, () -> {
+            try {
+                return new ZipInputStream(new FileInputStream("exported.zip"));
+            } catch (FileNotFoundException e) {
+                throw new RuntimeException(e);
+            }
+        }));
         this.worldsToAdd = new LinkedList<>();
         this.worlds = new ArrayList<>();
         this.serverAliveTicks = 0;
         EventManager.callEvent(new InitializeRegistriesEvent(this, entityRegistry));
         this.entityRegistry.lock();
+        this.renderDataBundler = new RenderDataBundler();
+        this.entityRegistry.registerToBundler(renderDataBundler);
+        try {
+            FileOutputStream stream = new FileOutputStream("out.zip");
+            this.renderDataBundler.createZip(stream);
+            stream.close();
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
     }
     public ServerWorld createWorld(){
         ServerWorld world = new ServerWorld(this);
@@ -65,9 +86,7 @@ public class GameServer extends Thread{
             processNetworkMessages();
             while(System.currentTimeMillis()<serverStartTime+((serverAliveTicks+1)*(1000/tps))){
                 processNetworkMessages();
-                try {
-                    Thread.sleep(1);
-                } catch (InterruptedException e) {throw new RuntimeException(e);}
+                Thread.yield();
             }
             serverAliveTicks++;
         }
@@ -87,7 +106,7 @@ public class GameServer extends Thread{
     private ServerMessage.Visitor SERVER_MESSAGE_VISITOR = new ServerMessage.Visitor() {
         @Override
         public void connect(SocketUser user) {
-            user.send(new GameDataPacket(entityRegistry.getRegisteredEntities()));
+            user.send(new GameDataPacket(entityRegistry.getRegisteredEntities()), true);
             SocketUserData socketUserData = new SocketUserData(user);
             user.setUserData(socketUserData);
             PlayerJoinEvent joinEvent = new PlayerJoinEvent(GameServer.this, socketUserData);

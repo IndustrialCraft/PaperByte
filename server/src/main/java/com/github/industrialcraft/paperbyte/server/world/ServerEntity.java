@@ -7,6 +7,7 @@ import com.github.industrialcraft.paperbyte.common.net.ChangeWorldPacket;
 import com.github.industrialcraft.paperbyte.common.util.Position;
 
 import java.io.DataInputStream;
+import java.io.DataOutputStream;
 import java.io.IOException;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -65,6 +66,8 @@ public abstract class ServerEntity {
         this.world.worldPacketAnnouncer.announceEntityMove(this);
     }
     public void teleport(Position newPosition, ServerWorld newWorld){
+        if(world.isRemoved())
+            return;
         this.position = newPosition;
         if(this.physicsBody != null)
             this.physicsBody.setTransform(position.x(), position.y(), this.physicsBody.getAngle());
@@ -80,7 +83,13 @@ public abstract class ServerEntity {
                 serverPlayerEntity.socketUserData.socketUser.send(new ChangeWorldPacket(), true);
                 world.worldPacketAnnouncer.syncEntitiesToNewPlayer(serverPlayerEntity.socketUserData.socketUser, false);
             }
+        } else {
+            this.world.worldPacketAnnouncer.announceEntityMove(this);
         }
+    }
+    public void toStream(DataOutputStream stream) throws IOException {
+        stream.writeInt(this.entityId);
+        this.position.toStream(stream);
     }
     public Position getPosition(){
         return this.position;
