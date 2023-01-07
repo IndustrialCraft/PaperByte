@@ -115,7 +115,7 @@ public class PaperByteMain extends ApplicationAdapter {
 				clientEntities.remove(removeEntityPacket.entityId);
 			}
 			if(msg instanceof EntityAnimationPacket animationPacket){
-				clientEntities.get(animationPacket.entityId).setAnimation(animationPacket.animationId);
+				clientEntities.get(animationPacket.entityId).setAnimation(animationPacket.animationId, entityNodes);
 			}
 			if(msg instanceof ChangeWorldPacket){
 				clientEntities.clear();

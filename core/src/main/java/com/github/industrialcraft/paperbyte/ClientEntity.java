@@ -32,8 +32,11 @@ public class ClientEntity {
         }
         time += Gdx.graphics.getDeltaTime();
     }
-    public void setAnimation(int animation){
-        //set animation string
+    public void setAnimation(int animation, Map<Identifier, Node> entityNodes){
+        if(entityNodes.containsKey(type)){
+            String anim = entityNodes.get(type).animations.keySet().stream().toList().get(animation);
+            this.animation = anim==null?"default":anim;
+        }
         this.time = 0;
     }
 }
