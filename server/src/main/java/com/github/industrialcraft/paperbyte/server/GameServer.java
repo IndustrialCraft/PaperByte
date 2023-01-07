@@ -38,13 +38,6 @@ public class GameServer extends Thread{
         loadMods();
         this.networkServer = new NetXServer(4321, MessageRegistryCreator.createMessageRegistry());
         this.entityRegistry = new EntityRegistry();
-        this.entityRegistry.register(Identifier.of("aaa","bbb"), new EntityRegistry.EntityRegistryData(null, null, () -> {
-            try {
-                return new ZipInputStream(new FileInputStream("exported.zip"));
-            } catch (FileNotFoundException e) {
-                throw new RuntimeException(e);
-            }
-        }));
         this.worldsToAdd = new LinkedList<>();
         this.worlds = new ArrayList<>();
         this.serverAliveTicks = 0;

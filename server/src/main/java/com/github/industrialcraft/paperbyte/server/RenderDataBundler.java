@@ -26,6 +26,8 @@ public class RenderDataBundler {
     public void createZip(OutputStream stream) throws IOException {
         ZipOutputStream zip = new ZipOutputStream(stream);
         for(var e : renderData.entrySet()){
+            if(e.getValue() == null)
+                continue;
             ZipEntry entry;
             while((entry = e.getValue().getNextEntry()) != null){
                 zip.putNextEntry(new ZipEntry(e.getKey() + "/" + entry.getName()));

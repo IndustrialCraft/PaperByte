@@ -8,6 +8,6 @@ public class CreateWorldEvent extends WorldEvent{
     public Vector2 gravity;
     public CreateWorldEvent(GameServer server, ServerWorld world) {
         super(server, world);
-        this.gravity = new Vector2(0, -10f);
+        this.gravity = new Vector2(0, 0);
     }
 }

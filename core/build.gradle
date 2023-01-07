@@ -9,6 +9,6 @@ dependencies {
 	implementation 'io.netty:netty-all:5.0.0.Alpha2'
 	implementation 'com.github.industrialcraft:identifier:fd2e641267'
 	implementation 'org.jetbrains:annotations:23.1.0'
-	implementation 'com.github.IndustrialCraft.Folder:core:242e206969'
+	implementation 'com.github.IndustrialCraft.Folder:core:2f494f9756'
 	implementation 'com.google.code.gson:gson:2.10.1'
 }

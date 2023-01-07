@@ -67,7 +67,7 @@ public class PaperByteMain extends ApplicationAdapter {
 		batch.setProjectionMatrix(camera.combined);
 		batch.begin();
 		for(ClientEntity clientEntity : clientEntities.values()){
-			clientEntity.render(batch);
+			clientEntity.render(batch, entityNodes);
 		}
 		batch.end();
 		shapeRenderer.setProjectionMatrix(camera.combined);
@@ -115,7 +115,7 @@ public class PaperByteMain extends ApplicationAdapter {
 				clientEntities.remove(removeEntityPacket.entityId);
 			}
 			if(msg instanceof EntityAnimationPacket animationPacket){
-				//todo
+				clientEntities.get(animationPacket.entityId).setAnimation(animationPacket.animationId);
 			}
 			if(msg instanceof ChangeWorldPacket){
 				clientEntities.clear();
