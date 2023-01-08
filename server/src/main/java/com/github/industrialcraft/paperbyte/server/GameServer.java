@@ -17,13 +17,16 @@ import com.github.industrialcraft.paperbyte.server.world.SoundRegistry;
 import net.cydhra.eventsystem.EventManager;
 import net.cydhra.eventsystem.listeners.EventHandler;
 import org.pf4j.DefaultPluginManager;
+import org.pf4j.Plugin;
 import org.pf4j.PluginManager;
 import org.pf4j.PluginWrapper;
 
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.LinkedList;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 public class GameServer extends Thread{
@@ -38,6 +41,7 @@ public class GameServer extends Thread{
     private PluginManager pluginManager;
     private ClientDataBundler clientDataBundler;
     public final Logger logger;
+    private Map<Class, Plugin> plugins;
     public GameServer() {
         this.logger = new Logger(this);
         loadMods();
@@ -71,6 +75,7 @@ public class GameServer extends Thread{
         this.pluginManager = new DefaultPluginManager();
         this.pluginManager.loadPlugins();
         this.pluginManager.startPlugins();
+        this.plugins = pluginManager.getPlugins().stream().map(PluginWrapper::getPlugin).collect(Collectors.toMap(Plugin::getClass, o -> o));
         this.logger.info("Loaded %s mods[%s]", this.pluginManager.getPlugins().size(), this.pluginManager.getPlugins().stream().map(PluginWrapper::getPluginId).collect(Collectors.joining(",")));
     }
     @Override
@@ -94,6 +99,9 @@ public class GameServer extends Thread{
             serverAliveTicks++;
         }
     }
+    public <T> T getPlugin(Class<T> clazz){
+        return (T) plugins.get(clazz);
+    }
     public EntityRegistry getEntityRegistry() {
         return entityRegistry;
     }
@@ -106,7 +114,7 @@ public class GameServer extends Thread{
     public NetXServer getNetworkServer() {
         return networkServer;
     }
-    private ServerMessage.Visitor SERVER_MESSAGE_VISITOR = new ServerMessage.Visitor() {
+    private final ServerMessage.Visitor SERVER_MESSAGE_VISITOR = new ServerMessage.Visitor() {
         @Override
         public void connect(SocketUser user) {
             user.send(new GameDataPacket(entityRegistry.getRegisteredEntities(), soundRegistry.getRegisteredSounds()), true);
