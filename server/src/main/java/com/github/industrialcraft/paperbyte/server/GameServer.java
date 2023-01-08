@@ -100,6 +100,9 @@ public class GameServer extends Thread{
             serverAliveTicks++;
         }
     }
+    public List<ServerPlayerEntity> getPlayers(){
+        return networkServer.getUsers().stream().map(socketUser -> socketUser.<SocketUserData>getUserData().getPlayerEntity()).filter(Objects::nonNull).toList();
+    }
     public <T extends Plugin> T getPlugin(Class<T> clazz){
         return (T) plugins.get(clazz);
     }
