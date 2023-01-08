@@ -23,10 +23,8 @@ import org.pf4j.PluginWrapper;
 
 import java.io.FileOutputStream;
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.LinkedList;
-import java.util.Map;
+import java.lang.ref.WeakReference;
+import java.util.*;
 import java.util.stream.Collectors;
 
 public class GameServer extends Thread{
@@ -42,6 +40,7 @@ public class GameServer extends Thread{
     private ClientDataBundler clientDataBundler;
     public final Logger logger;
     private Map<Class, Plugin> plugins;
+    private List<WeakReference<PlayerMap>> playerMaps;
     public GameServer() {
         this.logger = new Logger(this);
         loadMods();
@@ -65,6 +64,7 @@ public class GameServer extends Thread{
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
+        this.playerMaps = new ArrayList<>();
     }
     public ServerWorld createWorld(){
         ServerWorld world = new ServerWorld(this);
@@ -90,6 +90,7 @@ public class GameServer extends Thread{
             this.worldsToAdd.clear();
             this.worlds.removeIf(ServerWorld::isRemoved);
             this.worlds.forEach(ServerWorld::tick);
+            this.playerMaps.removeIf(playerMapWeakReference -> playerMapWeakReference.get()==null);
             EventManager.callEvent(new GameTickEvent(this));
             processNetworkMessages();
             while(System.currentTimeMillis()<serverStartTime+((serverAliveTicks+1)*(1000/tps))){
@@ -99,8 +100,11 @@ public class GameServer extends Thread{
             serverAliveTicks++;
         }
     }
-    public <T> T getPlugin(Class<T> clazz){
+    public <T extends Plugin> T getPlugin(Class<T> clazz){
         return (T) plugins.get(clazz);
+    }
+    public void addPlayerMap(PlayerMap playerMap){
+        this.playerMaps.add(new WeakReference<>(playerMap));
     }
     public EntityRegistry getEntityRegistry() {
         return entityRegistry;
@@ -138,6 +142,12 @@ public class GameServer extends Thread{
         @Override
         public void disconnect(SocketUser user) {
             if(user.<SocketUserData>getUserData().getPlayerEntity() != null) {
+                for(WeakReference<PlayerMap> playerMapRef : playerMaps){
+                    PlayerMap playerMap = playerMapRef.get();
+                    if(playerMap != null)
+                        playerMap.remove(user.<SocketUserData>getUserData().getPlayerEntity());
+                }
+                EventManager.callEvent(new PlayerLeaveEvent(GameServer.this, user.<SocketUserData>getUserData().getPlayerEntity()));
                 user.<SocketUserData>getUserData().getPlayerEntity().remove();
                 user.<SocketUserData>getUserData().setPlayerEntity(null);
             }
