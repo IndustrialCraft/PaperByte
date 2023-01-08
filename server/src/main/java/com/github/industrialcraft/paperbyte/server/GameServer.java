@@ -1,9 +1,10 @@
 package com.github.industrialcraft.paperbyte.server;
 
-import com.github.industrialcraft.identifier.Identifier;
+import com.badlogic.gdx.graphics.Color;
 import com.github.industrialcraft.netx.NetXServer;
 import com.github.industrialcraft.netx.ServerMessage;
 import com.github.industrialcraft.netx.SocketUser;
+import com.github.industrialcraft.paperbyte.common.gui.RectUIComponent;
 import com.github.industrialcraft.paperbyte.common.net.AddEntityPacket;
 import com.github.industrialcraft.paperbyte.common.net.ClientInputPacket;
 import com.github.industrialcraft.paperbyte.common.net.GameDataPacket;
@@ -12,7 +13,9 @@ import com.github.industrialcraft.paperbyte.server.events.*;
 import com.github.industrialcraft.paperbyte.server.world.EntityRegistry;
 import com.github.industrialcraft.paperbyte.server.world.ServerPlayerEntity;
 import com.github.industrialcraft.paperbyte.server.world.ServerWorld;
+import com.github.industrialcraft.paperbyte.server.world.SoundRegistry;
 import net.cydhra.eventsystem.EventManager;
+import net.cydhra.eventsystem.listeners.EventHandler;
 import org.pf4j.DefaultPluginManager;
 import org.pf4j.PluginManager;
 import org.pf4j.PluginWrapper;
@@ -26,30 +29,34 @@ import java.util.stream.Collectors;
 public class GameServer extends Thread{
     private final NetXServer networkServer;
     private final EntityRegistry entityRegistry;
+    private final SoundRegistry soundRegistry;
     private final LinkedList<ServerWorld> worldsToAdd;
     private final ArrayList<ServerWorld> worlds;
     private long serverStartTime;
     private int serverAliveTicks;
     private int tps;
     private PluginManager pluginManager;
-    private RenderDataBundler renderDataBundler;
+    private ClientDataBundler clientDataBundler;
     public final Logger logger;
     public GameServer() {
         this.logger = new Logger(this);
         loadMods();
         this.networkServer = new NetXServer(4321, MessageRegistryCreator.createMessageRegistry());
         this.entityRegistry = new EntityRegistry();
+        this.soundRegistry = new SoundRegistry();
         this.worldsToAdd = new LinkedList<>();
         this.worlds = new ArrayList<>();
         this.serverAliveTicks = 0;
-        EventManager.callEvent(new InitializeRegistriesEvent(this, entityRegistry));
+        EventManager.callEvent(new InitializeRegistriesEvent(this, entityRegistry, soundRegistry));
         this.entityRegistry.lock();
+        this.soundRegistry.lock();
         this.logger.info("Loaded %s entities", this.entityRegistry.getRegisteredEntities().size());
-        this.renderDataBundler = new RenderDataBundler(this);
-        this.entityRegistry.registerToBundler(renderDataBundler);
+        this.clientDataBundler = new ClientDataBundler(this);
+        this.entityRegistry.registerToBundler(clientDataBundler);
+        this.soundRegistry.registerToBundler(clientDataBundler);
         try {
             FileOutputStream stream = new FileOutputStream("out.zip");
-            this.renderDataBundler.createZip(stream);
+            this.clientDataBundler.createZip(stream);
             stream.close();
         } catch (IOException e) {
             throw new RuntimeException(e);
@@ -102,7 +109,7 @@ public class GameServer extends Thread{
     private ServerMessage.Visitor SERVER_MESSAGE_VISITOR = new ServerMessage.Visitor() {
         @Override
         public void connect(SocketUser user) {
-            user.send(new GameDataPacket(entityRegistry.getRegisteredEntities()), true);
+            user.send(new GameDataPacket(entityRegistry.getRegisteredEntities(), soundRegistry.getRegisteredSounds()), true);
             SocketUserData socketUserData = new SocketUserData(user);
             user.setUserData(socketUserData);
             PlayerJoinEvent joinEvent = new PlayerJoinEvent(GameServer.this, socketUserData);

@@ -12,8 +12,10 @@ import java.util.Map;
 
 public class GameDataPacket {
     public final Map<Integer, Identifier> entityRegistry;
-    public GameDataPacket(Map<Integer, Identifier> entityRegistry) {
+    public final Map<Integer, Identifier> soundRegistry;
+    public GameDataPacket(Map<Integer, Identifier> entityRegistry, Map<Integer, Identifier> soundRegistry) {
         this.entityRegistry = entityRegistry;
+        this.soundRegistry = soundRegistry;
     }
     public GameDataPacket(DataInputStream stream) throws IOException {
         HashMap<Integer,Identifier> modEntityRegistry = new HashMap<>();
@@ -22,10 +24,21 @@ public class GameDataPacket {
             modEntityRegistry.put(stream.readInt(), Identifier.parse(stream.readUTF()));
         }
         this.entityRegistry = Collections.unmodifiableMap(modEntityRegistry);
+        HashMap<Integer,Identifier> modSoundRegistry = new HashMap<>();
+        size = stream.readInt();
+        for(int i = 0;i < size;i++){
+            modSoundRegistry.put(stream.readInt(), Identifier.parse(stream.readUTF()));
+        }
+        this.soundRegistry = Collections.unmodifiableMap(modSoundRegistry);
     }
     public void toStream(DataOutputStream stream) throws IOException {
         stream.writeInt(entityRegistry.size());
         for(var entry : entityRegistry.entrySet()){
+            stream.writeInt(entry.getKey());
+            stream.writeUTF(entry.getValue().toString());
+        }
+        stream.writeInt(soundRegistry.size());
+        for(var entry : soundRegistry.entrySet()){
             stream.writeInt(entry.getKey());
             stream.writeUTF(entry.getValue().toString());
         }

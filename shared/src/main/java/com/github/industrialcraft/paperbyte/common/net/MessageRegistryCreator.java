@@ -13,6 +13,8 @@ public class MessageRegistryCreator {
         messageRegistry.register(6, RemoveEntityPacket.createDescriptor());
         messageRegistry.register(7, ChangeWorldPacket.createDescriptor());
         messageRegistry.register(8, GameDataPacket.createDescriptor());
+        messageRegistry.register(9, PlaySoundPacket.createDescriptor());
+        messageRegistry.register(10, SetGUIPacket.createDescriptor());
         return messageRegistry;
     }
 }

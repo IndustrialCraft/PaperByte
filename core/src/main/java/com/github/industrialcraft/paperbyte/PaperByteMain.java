@@ -3,8 +3,8 @@ package com.github.industrialcraft.paperbyte;
 import com.badlogic.gdx.ApplicationAdapter;
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.Input;
+import com.badlogic.gdx.audio.Sound;
 import com.badlogic.gdx.files.FileHandle;
-import com.badlogic.gdx.graphics.Camera;
 import com.badlogic.gdx.graphics.GL20;
 import com.badlogic.gdx.graphics.OrthographicCamera;
 import com.badlogic.gdx.graphics.Texture;
@@ -19,10 +19,8 @@ import com.github.industrialcraft.netx.NetXClient;
 import com.github.industrialcraft.paperbyte.common.net.*;
 import com.github.industrialcraft.paperbyte.common.util.NonClosingInputStreamWrapper;
 import com.google.gson.JsonParser;
-import org.jetbrains.annotations.Nullable;
 
 import java.io.*;
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.zip.ZipEntry;
@@ -40,6 +38,14 @@ public class PaperByteMain extends ApplicationAdapter {
 	private HashMap<Integer,ClientEntity> clientEntities;
 	private Map<Identifier, Node> entityNodes;
 	private Map<Integer, Identifier> entityRegistry;
+	private Map<Integer, Identifier> soundRegistry;
+	private Map<Identifier, Sound> sounds;
+	private Map<Integer, SoundWithID> playingSounds;
+	private final CustomAPI customAPI;
+	private GUI gui;
+	public PaperByteMain(CustomAPI customAPI) {
+		this.customAPI = customAPI;
+	}
 	@Override
 	public void create() {
 		FONT = new BitmapFont();
@@ -47,12 +53,15 @@ public class PaperByteMain extends ApplicationAdapter {
 		this.batch = new SpriteBatch();
 		this.shapeRenderer = new ShapeRenderer();
 		this.clientEntities = new HashMap<>();
+		this.sounds = new HashMap<>();
+		this.playingSounds = new HashMap<>();
 		this.camera = new OrthographicCamera(Gdx.graphics.getWidth(), Gdx.graphics.getHeight());
 		this.camera.update();
 		this.networkClient = new NetXClient("localhost", 4321, MessageRegistryCreator.createMessageRegistry());
 		this.networkClient.start();
+		this.gui = new GUI();
 		try {
-			loadNodes(new BufferedInputStream(new FileInputStream(new File("out.zip"))));
+			loadNodes(new BufferedInputStream(new FileInputStream("out.zip")));
 		} catch (IOException e) {
 			throw new RuntimeException(e);
 		}
@@ -74,6 +83,9 @@ public class PaperByteMain extends ApplicationAdapter {
 		shapeRenderer.setAutoShapeType(true);
 		//shapeRenderer.begin();
 		//shapeRenderer.end();
+		this.gui.draw();
+		this.playingSounds.values().removeIf(soundWithID -> !customAPI.isPlaying((int) soundWithID.id()));
+		//todo: sound volume based on distance
 		processNetworkMessages();
 		sendInputPacket();
 	}
@@ -105,10 +117,12 @@ public class PaperByteMain extends ApplicationAdapter {
 		@Override
 		public void message(NetXClient user, Object msg) {
 			if(msg instanceof GameDataPacket gameDataPacket){
+				System.out.println("gamedata");
 				PaperByteMain.this.entityRegistry = gameDataPacket.entityRegistry;
+				PaperByteMain.this.soundRegistry = gameDataPacket.soundRegistry;
 			}
 			if(msg instanceof AddEntityPacket addEntityPacket){
-				System.out.println("addentity");
+				System.out.println("addentity" + entityRegistry);
 				clientEntities.put(addEntityPacket.entityId, new ClientEntity(addEntityPacket.entityId, entityRegistry.get(addEntityPacket.entityType), addEntityPacket.position));
 			}
 			if(msg instanceof RemoveEntityPacket removeEntityPacket){
@@ -134,6 +148,19 @@ public class PaperByteMain extends ApplicationAdapter {
 				camera.update();
 				Gdx.graphics.setTitle("x: " + camera.position.x + " y: " + camera.position.y);
 			}
+			if(msg instanceof PlaySoundPacket playSoundPacket){
+				Identifier soundId = soundRegistry.get(playSoundPacket.soundType);
+				Sound sound = sounds.get(soundId);
+				SoundWithID playingSound = playingSounds.get(playSoundPacket.soundId);
+				if(playingSound != null){
+					playingSound.sound().stop(playingSound.id());
+				}
+				playingSound = new SoundWithID(sound, sound.play());
+				playingSounds.put(playSoundPacket.soundId, playingSound);
+			}
+			if(msg instanceof SetGUIPacket setGUIPacket){
+				gui.fromPacket(setGUIPacket);
+			}
 		}
 		@Override
 		public void exception(NetXClient user, Throwable exception) {
@@ -153,7 +180,7 @@ public class PaperByteMain extends ApplicationAdapter {
 		ZipEntry entry;
 		while((entry = zip.getNextEntry()) != null){
 			if(entry.getName().endsWith(".png")){
-				textures.put(entry.getName(), new Texture(new FileHandle(""){
+				textures.put(entry.getName(), new Texture(new FileHandle(entry.getName()){
 					@Override
 					public InputStream read() {
 						return new NonClosingInputStreamWrapper(zip);
@@ -161,6 +188,13 @@ public class PaperByteMain extends ApplicationAdapter {
 				}));
 			} else if(entry.getName().endsWith(".json")){
 				renderData.put(entry.getName(), new String(zip.readAllBytes()));
+			} else if(entry.getName().endsWith(".wav")){
+				sounds.put(Identifier.parse(entry.getName().split("/")[0].replace(".wav","")), Gdx.audio.newSound(new FileHandle(entry.getName()){
+					@Override
+					public InputStream read() {
+						return new NonClosingInputStreamWrapper(zip);
+					}
+				}));
 			}
 		}
 		for(var e : renderData.entrySet()){

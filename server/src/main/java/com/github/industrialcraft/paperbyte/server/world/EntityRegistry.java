@@ -2,7 +2,7 @@ package com.github.industrialcraft.paperbyte.server.world;
 
 import com.github.industrialcraft.identifier.Identifier;
 import com.github.industrialcraft.paperbyte.common.util.Position;
-import com.github.industrialcraft.paperbyte.server.RenderDataBundler;
+import com.github.industrialcraft.paperbyte.server.ClientDataBundler;
 
 import java.io.DataInputStream;
 import java.io.IOException;
@@ -12,7 +12,6 @@ import java.util.Map;
 import java.util.function.BiFunction;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
-import java.util.zip.ZipFile;
 import java.util.zip.ZipInputStream;
 
 public class EntityRegistry {
@@ -28,15 +27,17 @@ public class EntityRegistry {
         this.entityNetworkIdGenerator = 0;
     }
     public void lock(){
+        if(locked)
+            return;
         this.locked = true;
         this.reversedNetworkIds = Collections.unmodifiableMap(networkIds.entrySet().stream().collect(Collectors.toMap(Map.Entry::getValue, Map.Entry::getKey)));
     }
-    public void register(Identifier identifier, EntityRegistryData creator){
+    public void register(Identifier identifier, EntityRegistryData data){
         if(locked)
             throw new IllegalStateException("registry already locked");
         if(entityData.containsKey(identifier))
             throw new IllegalStateException("Entity " + identifier + " already registered");
-        this.entityData.put(identifier, creator);
+        this.entityData.put(identifier, data);
         this.networkIds.put(identifier, entityNetworkIdGenerator);
         entityNetworkIdGenerator++;
     }
@@ -62,9 +63,9 @@ public class EntityRegistry {
             throw new IllegalStateException("Entity " + identifier + " is not registered");
         return entityId;
     }
-    public void registerToBundler(RenderDataBundler renderDataBundler){
+    public void registerToBundler(ClientDataBundler clientDataBundler){
         for(var e : entityData.entrySet()){
-            renderDataBundler.addEntity(e.getKey(), e.getValue());
+            clientDataBundler.addEntity(e.getKey(), e.getValue());
         }
     }
     public int resolveNetworkId(ServerEntity entity){
