@@ -3,6 +3,7 @@ package com.github.industrialcraft.paperbyte;
 import com.badlogic.gdx.ApplicationAdapter;
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.Input;
+import com.badlogic.gdx.InputProcessor;
 import com.badlogic.gdx.audio.Sound;
 import com.badlogic.gdx.files.FileHandle;
 import com.badlogic.gdx.graphics.GL20;
@@ -11,6 +12,7 @@ import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.BitmapFont;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
+import com.badlogic.gdx.math.Vector3;
 import com.github.industrialcraft.folder.Node;
 import com.github.industrialcraft.folder.SaverLoader;
 import com.github.industrialcraft.identifier.Identifier;
@@ -21,13 +23,14 @@ import com.github.industrialcraft.paperbyte.common.util.NonClosingInputStreamWra
 import com.google.gson.JsonParser;
 
 import java.io.*;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 
 /** {@link com.badlogic.gdx.ApplicationListener} implementation shared by all platforms. */
-public class PaperByteMain extends ApplicationAdapter {
+public class PaperByteMain extends ApplicationAdapter implements InputProcessor {
 	public static float METER_TO_PIXEL = 10;
 	public static BitmapFont FONT;
 
@@ -43,11 +46,16 @@ public class PaperByteMain extends ApplicationAdapter {
 	private Map<Integer, SoundWithID> playingSounds;
 	private final CustomAPI customAPI;
 	private GUI gui;
+	private ArrayList<Integer> typedChars;
+	private float scrollX;
+	private float scrollY;
 	public PaperByteMain(CustomAPI customAPI) {
 		this.customAPI = customAPI;
 	}
 	@Override
 	public void create() {
+		this.scrollX = 0;
+		this.scrollY = 0;
 		FONT = new BitmapFont();
 		//PaperByteMain.FONT.getData().setScale(0.05f);
 		this.batch = new SpriteBatch();
@@ -65,6 +73,7 @@ public class PaperByteMain extends ApplicationAdapter {
 		} catch (IOException e) {
 			throw new RuntimeException(e);
 		}
+		typedChars = new ArrayList<>();
 	}
 
 	@Override
@@ -88,10 +97,12 @@ public class PaperByteMain extends ApplicationAdapter {
 		//todo: sound volume based on distance
 		processNetworkMessages();
 		sendInputPacket();
+		Gdx.input.setInputProcessor(this);
 	}
 	public void sendInputPacket(){
-		float worldMouseX = 0;
-		float worldMouseY = 0;
+		Vector3 worldMouse = camera.unproject(new Vector3(Gdx.input.getX(), Gdx.input.getY(), 0));
+		float worldMouseX = worldMouse.x;
+		float worldMouseY = worldMouse.y;
 		int screenMouseX = Gdx.input.getX();
 		int screenMouseY = Gdx.input.getY();
 		int screenSizeX = Gdx.graphics.getWidth();
@@ -103,7 +114,14 @@ public class PaperByteMain extends ApplicationAdapter {
 		for(int i = 0;i < ClientInputPacket.KEYS.length;i++){
 			keys[i] = Gdx.input.isKeyPressed(ClientInputPacket.KEYS[i]);
 		}
-		networkClient.send(new ClientInputPacket(worldMouseX, worldMouseY, screenMouseX, screenMouseY, screenSizeX, screenSizeY, isMouse1, isMouse2, isMouse3, keys));
+		int[] typed = new int[typedChars.size()];
+		for(int i = 0;i < typed.length;i++){
+			typed[i] = typedChars.get(i);
+		}
+		networkClient.send(new ClientInputPacket(worldMouseX, worldMouseY, screenMouseX, screenMouseY, screenSizeX, screenSizeY, scrollX, scrollY, isMouse1, isMouse2, isMouse3, keys, typed));
+		typedChars.clear();
+		scrollX = 0;
+		scrollY = 0;
 	}
 	private ClientMessage.Visitor CLIENT_MESSAGE_VISITOR = new ClientMessage.Visitor() {
 		@Override
@@ -213,5 +231,50 @@ public class PaperByteMain extends ApplicationAdapter {
 		networkClient.disconnect();
 		batch.dispose();
 		shapeRenderer.dispose();
+	}
+
+	@Override
+	public boolean keyDown(int keycode) {
+		typedChars.add(keycode);
+		return false;
+	}
+
+	@Override
+	public boolean keyUp(int keycode) {
+		typedChars.add(keycode | (1<<30));
+		return false;
+	}
+
+	@Override
+	public boolean keyTyped(char character) {
+		typedChars.add(((int) character)|(1<<31));
+		return false;
+	}
+
+	@Override
+	public boolean touchDown(int screenX, int screenY, int pointer, int button) {
+		return false;
+	}
+
+	@Override
+	public boolean touchUp(int screenX, int screenY, int pointer, int button) {
+		return false;
+	}
+
+	@Override
+	public boolean touchDragged(int screenX, int screenY, int pointer) {
+		return false;
+	}
+
+	@Override
+	public boolean mouseMoved(int screenX, int screenY) {
+		return false;
+	}
+
+	@Override
+	public boolean scrolled(float amountX, float amountY) {
+		this.scrollX += amountX;
+		this.scrollY += amountY;
+		return false;
 	}
 }

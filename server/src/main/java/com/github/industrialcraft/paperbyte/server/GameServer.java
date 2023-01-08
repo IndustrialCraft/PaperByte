@@ -137,6 +137,20 @@ public class GameServer extends Thread{
         @Override
         public void message(SocketUser user, Object msg) {
             if(msg instanceof ClientInputPacket clientInputPacket){
+                while(clientInputPacket.readTyped(new ClientInputPacket.Visitor() {
+                    @Override
+                    public void keyTyped(char ch) {
+                        System.out.println("typed: " + ch);
+                    }
+                    @Override
+                    public void keyDown(int keycode) {
+                        System.out.println("down: " + keycode);
+                    }
+                    @Override
+                    public void keyUp(int keycode) {
+                        System.out.println("up: " + keycode);
+                    }
+                }));
                 user.<SocketUserData>getUserData().getPlayerEntity().handleClientInput(clientInputPacket);
             }
         }
