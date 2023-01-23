@@ -22,7 +22,7 @@ public class GUI {
     public GUI() {
         this.shapeRenderer = new ShapeRenderer();
         this.spriteBatch = new SpriteBatch();
-        this.camera = new OrthographicCamera(200, 200);
+        this.camera = new OrthographicCamera(2000, 2000);
         this.shapeRenderer.setProjectionMatrix(camera.combined);
         this.spriteBatch.setProjectionMatrix(camera.combined);
         this.shapeRenderer.setAutoShapeType(true);
@@ -30,20 +30,22 @@ public class GUI {
         this.uiComponents = Collections.EMPTY_LIST;
     }
     public void draw(){
-        spriteBatch.begin();
-        shapeRenderer.begin(ShapeRenderer.ShapeType.Filled);
         for(BasicUIComponent component : uiComponents){
             if(component instanceof RectUIComponent rectUIComponent){
+                shapeRenderer.begin(ShapeRenderer.ShapeType.Filled);
                 shapeRenderer.setColor(rectUIComponent.color);
                 shapeRenderer.rect(rectUIComponent.x, rectUIComponent.y, rectUIComponent.width, rectUIComponent.height);
+                shapeRenderer.end();
             }
             if(component instanceof TextUIComponent textUIComponent){
+                spriteBatch.begin();
                 spriteBatch.setColor(textUIComponent.color);
+                font.getData().setScale(textUIComponent.scale);
                 font.draw(spriteBatch, textUIComponent.text, textUIComponent.x, textUIComponent.y);
+                font.getData().setScale(1/textUIComponent.scale);
+                spriteBatch.end();
             }
         }
-        spriteBatch.end();
-        shapeRenderer.end();
     }
     public void fromPacket(SetGUIPacket packet){
         this.uiComponents = packet.uiComponents.stream().toList();
