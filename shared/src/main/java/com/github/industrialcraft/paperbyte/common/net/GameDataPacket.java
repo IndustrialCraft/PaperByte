@@ -13,9 +13,11 @@ import java.util.Map;
 public class GameDataPacket {
     public final Map<Integer, Identifier> entityRegistry;
     public final Map<Integer, Identifier> soundRegistry;
-    public GameDataPacket(Map<Integer, Identifier> entityRegistry, Map<Integer, Identifier> soundRegistry) {
+    public final byte[] clientData;
+    public GameDataPacket(Map<Integer, Identifier> entityRegistry, Map<Integer, Identifier> soundRegistry, byte[] clientData) {
         this.entityRegistry = entityRegistry;
         this.soundRegistry = soundRegistry;
+        this.clientData = clientData;
     }
     public GameDataPacket(DataInputStream stream) throws IOException {
         HashMap<Integer,Identifier> modEntityRegistry = new HashMap<>();
@@ -30,6 +32,11 @@ public class GameDataPacket {
             modSoundRegistry.put(stream.readInt(), Identifier.parse(stream.readUTF()));
         }
         this.soundRegistry = Collections.unmodifiableMap(modSoundRegistry);
+        int clientDataSize = stream.readInt();
+        this.clientData = new byte[clientDataSize];
+        for(int i = 0;i < clientDataSize;i++){
+            clientData[i] = stream.readByte();
+        }
     }
     public void toStream(DataOutputStream stream) throws IOException {
         stream.writeInt(entityRegistry.size());
@@ -41,6 +48,10 @@ public class GameDataPacket {
         for(var entry : soundRegistry.entrySet()){
             stream.writeInt(entry.getKey());
             stream.writeUTF(entry.getValue().toString());
+        }
+        stream.writeInt(clientData.length);
+        for(int i = 0;i < clientData.length;i++){
+            stream.writeByte(clientData[i]);
         }
     }
     public static MessageRegistry.MessageDescriptor<GameDataPacket> createDescriptor(){

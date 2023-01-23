@@ -1,10 +1,8 @@
 package com.github.industrialcraft.paperbyte.server;
 
-import com.badlogic.gdx.graphics.Color;
 import com.github.industrialcraft.netx.NetXServer;
 import com.github.industrialcraft.netx.ServerMessage;
 import com.github.industrialcraft.netx.SocketUser;
-import com.github.industrialcraft.paperbyte.common.gui.RectUIComponent;
 import com.github.industrialcraft.paperbyte.common.net.AddEntityPacket;
 import com.github.industrialcraft.paperbyte.common.net.ClientInputPacket;
 import com.github.industrialcraft.paperbyte.common.net.GameDataPacket;
@@ -15,13 +13,11 @@ import com.github.industrialcraft.paperbyte.server.world.ServerPlayerEntity;
 import com.github.industrialcraft.paperbyte.server.world.ServerWorld;
 import com.github.industrialcraft.paperbyte.server.world.SoundRegistry;
 import net.cydhra.eventsystem.EventManager;
-import net.cydhra.eventsystem.listeners.EventHandler;
 import org.pf4j.DefaultPluginManager;
 import org.pf4j.Plugin;
 import org.pf4j.PluginManager;
 import org.pf4j.PluginWrapper;
 
-import java.io.FileOutputStream;
 import java.io.IOException;
 import java.lang.ref.WeakReference;
 import java.util.*;
@@ -58,9 +54,7 @@ public class GameServer extends Thread{
         this.entityRegistry.registerToBundler(clientDataBundler);
         this.soundRegistry.registerToBundler(clientDataBundler);
         try {
-            FileOutputStream stream = new FileOutputStream("out.zip");
-            this.clientDataBundler.createZip(stream);
-            stream.close();
+            this.clientDataBundler.compileData();
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
@@ -124,7 +118,7 @@ public class GameServer extends Thread{
     private final ServerMessage.Visitor SERVER_MESSAGE_VISITOR = new ServerMessage.Visitor() {
         @Override
         public void connect(SocketUser user) {
-            user.send(new GameDataPacket(entityRegistry.getRegisteredEntities(), soundRegistry.getRegisteredSounds()), true);
+            user.send(new GameDataPacket(entityRegistry.getRegisteredEntities(), soundRegistry.getRegisteredSounds(), clientDataBundler.getData()), true);
             SocketUserData socketUserData = new SocketUserData(user);
             user.setUserData(socketUserData);
             PlayerJoinEvent joinEvent = new PlayerJoinEvent(GameServer.this, socketUserData);

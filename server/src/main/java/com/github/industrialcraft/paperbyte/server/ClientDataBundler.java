@@ -3,6 +3,7 @@ package com.github.industrialcraft.paperbyte.server;
 import com.github.industrialcraft.identifier.Identifier;
 import com.github.industrialcraft.paperbyte.server.world.EntityRegistry;
 
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -16,6 +17,7 @@ public class ClientDataBundler {
     private final HashMap<Identifier, ZipInputStream> renderData;
     private final HashMap<Identifier, InputStream> soundData;
     private final GameServer server;
+    private byte[] data;
     public ClientDataBundler(GameServer server) {
         this.server = server;
         this.renderData = new HashMap<>();
@@ -31,7 +33,15 @@ public class ClientDataBundler {
             throw new IllegalStateException("sound " + id + " already registered for sound data bundling");
         this.soundData.put(id, sound.get());
     }
-    public void createZip(OutputStream stream) throws IOException {
+    public void compileData() throws IOException {
+        ByteArrayOutputStream stream = new ByteArrayOutputStream();
+        createZip(stream);
+        this.data = stream.toByteArray();
+    }
+    public byte[] getData() {
+        return data;
+    }
+    private void createZip(OutputStream stream) throws IOException {
         ZipOutputStream zip = new ZipOutputStream(stream);
         for(var e : renderData.entrySet()){
             if(e.getValue() == null) {

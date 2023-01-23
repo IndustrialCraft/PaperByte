@@ -14,6 +14,7 @@ dependencies {
 	implementation "com.badlogicgames.gdx:gdx-box2d:$gdxVersion"
 	implementation "com.badlogicgames.gdx:gdx-box2d-platform:$gdxVersion:natives-desktop"
 	implementation 'org.pf4j:pf4j:3.8.0'
+	implementation 'com.mojang:brigadier:1.0.18'
 }
 
 jar {

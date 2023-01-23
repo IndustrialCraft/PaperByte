@@ -68,16 +68,13 @@ public class PaperByteMain extends ApplicationAdapter implements InputProcessor 
 		this.networkClient = new NetXClient("localhost", 4321, MessageRegistryCreator.createMessageRegistry());
 		this.networkClient.start();
 		this.gui = new GUI();
-		try {
-			loadNodes(new BufferedInputStream(new FileInputStream("out.zip")));
-		} catch (IOException e) {
-			throw new RuntimeException(e);
-		}
 		typedChars = new ArrayList<>();
+		this.entityNodes = null;
 	}
 
 	@Override
 	public void render() {
+		processNetworkMessages();
 		if(networkClient.getClientChannel() == null || this.entityNodes == null)
 			return;
 		Gdx.gl.glClearColor(0.15f, 0.15f, 0.2f, 1f);
@@ -95,7 +92,6 @@ public class PaperByteMain extends ApplicationAdapter implements InputProcessor 
 		this.gui.draw();
 		this.playingSounds.values().removeIf(soundWithID -> !customAPI.isPlaying((int) soundWithID.id()));
 		//todo: sound volume based on distance
-		processNetworkMessages();
 		sendInputPacket();
 		Gdx.input.setInputProcessor(this);
 	}
@@ -138,6 +134,12 @@ public class PaperByteMain extends ApplicationAdapter implements InputProcessor 
 				System.out.println("gamedata");
 				PaperByteMain.this.entityRegistry = gameDataPacket.entityRegistry;
 				PaperByteMain.this.soundRegistry = gameDataPacket.soundRegistry;
+				try {
+					loadNodes(new ByteArrayInputStream(gameDataPacket.clientData));
+				} catch (IOException e) {
+					e.printStackTrace();
+					throw new RuntimeException(e);
+				}
 			}
 			if(msg instanceof AddEntityPacket addEntityPacket){
 				System.out.println("addentity" + entityRegistry);
