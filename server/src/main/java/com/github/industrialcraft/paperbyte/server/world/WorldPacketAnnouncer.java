@@ -1,9 +1,13 @@
 package com.github.industrialcraft.paperbyte.server.world;
 
+import com.badlogic.gdx.Version;
+import com.badlogic.gdx.math.Vector2;
+import com.badlogic.gdx.physics.box2d.*;
 import com.github.industrialcraft.netx.SocketUser;
 import com.github.industrialcraft.paperbyte.common.net.AddEntityPacket;
 import com.github.industrialcraft.paperbyte.common.net.MoveEntitiesPacket;
 import com.github.industrialcraft.paperbyte.common.net.RemoveEntityPacket;
+import com.github.industrialcraft.paperbyte.common.net.ServerCollisionsDebugPacket;
 import com.github.industrialcraft.paperbyte.common.util.Position;
 import com.github.industrialcraft.paperbyte.server.GameServer;
 import com.github.industrialcraft.paperbyte.server.SocketUserData;
@@ -19,6 +23,50 @@ public class WorldPacketAnnouncer {
         this.world = world;
     }
     public void sendPositionUpdates(){
+        ArrayList<ServerCollisionsDebugPacket.RenderData> collisionRenderData = new ArrayList<>();
+        for(var ent : world.getEntities()){
+            Body body = ent.getPhysicsBody();
+            if(body != null){
+                Transform transform = body.getTransform();
+                transform = new Transform(transform.getPosition(), transform.getRotation());
+                for(var fixture : body.getFixtureList()){
+                    collisionRenderData.add(switch (fixture.getShape().getType()){
+                        case Circle -> {
+                            CircleShape shape = (CircleShape) fixture.getShape();
+                            yield new ServerCollisionsDebugPacket.ServerCollisionRenderDataCircle(transform, shape.getPosition().cpy(), shape.getRadius());
+                        }
+                        case Edge -> {
+                            EdgeShape shape = (EdgeShape) fixture.getShape();
+                            Vector2 v1 = new Vector2();
+                            Vector2 v2 = new Vector2();
+                            shape.getVertex1(v1);
+                            shape.getVertex2(v2);
+                            yield new ServerCollisionsDebugPacket.ServerCollisionRenderDataEdge(transform, v1, v2);
+                        }
+                        case Polygon -> {
+                            PolygonShape shape = (PolygonShape) fixture.getShape();
+                            Vector2[] vertices = new Vector2[shape.getVertexCount()];
+                            for(int i = 0;i < vertices.length;i++) {
+                                vertices[i] = new Vector2();
+                                shape.getVertex(i, vertices[i]);
+                            }
+                            yield new ServerCollisionsDebugPacket.ServerCollisionRenderDataPolygon(transform, vertices);
+                        }
+                        case Chain -> {
+                            ChainShape shape = (ChainShape) fixture.getShape();
+                            Vector2[] vertices = new Vector2[shape.getVertexCount()];
+                            for(int i = 0;i < vertices.length;i++) {
+                                vertices[i] = new Vector2();
+                                shape.getVertex(i, vertices[i]);
+                            }
+                            yield new ServerCollisionsDebugPacket.ServerCollisionRenderDataChain(transform, vertices);
+                        }
+                    });
+                }
+            }
+        }
+        this.world.parent.getNetworkServer().broadcast(new ServerCollisionsDebugPacket(collisionRenderData), socketUser -> isUserInWorld(socketUser, world) && socketUser.<SocketUserData>getUserData().getPlayerEntity().shouldSendHitBoxes(), true);
+
         ArrayList<Integer> entityIds = new ArrayList<>();
         ArrayList<Position> entityPositions = new ArrayList<>();
         for(ServerEntity movedEntity : movedEntities){

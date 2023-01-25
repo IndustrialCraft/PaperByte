@@ -8,18 +8,17 @@ import com.github.industrialcraft.paperbyte.server.SocketUserData;
 import com.github.industrialcraft.paperbyte.server.events.SendGUIEvent;
 import net.cydhra.eventsystem.EventManager;
 
-import java.io.DataInputStream;
-import java.io.IOException;
-
 public abstract class ServerPlayerEntity extends ServerEntity {
     public final SocketUserData socketUserData;
     private float cameraZoom;
     private boolean shouldResyncUI;
+    private boolean sendHitBoxes;
     public ServerPlayerEntity(Position position, ServerWorld world, SocketUserData socketUserData) {
         super(position, world);
         this.socketUserData = socketUserData;
         this.cameraZoom = 1;
         markUIDirty();
+        this.sendHitBoxes = false;
     }
 
     @Override
@@ -42,6 +41,12 @@ public abstract class ServerPlayerEntity extends ServerEntity {
     public void teleport(Position newPosition, ServerWorld newWorld) {
         super.teleport(newPosition, newWorld);
         updateCamera();
+    }
+    public boolean shouldSendHitBoxes() {
+        return sendHitBoxes;
+    }
+    public void setSendHitBoxes(boolean sendHitBoxes) {
+        this.sendHitBoxes = sendHitBoxes;
     }
     public void markUIDirty(){
         this.shouldResyncUI = true;

@@ -29,6 +29,7 @@ public abstract class BasicUIComponent {
         return switch (id){
             case RectUIComponent.SER_ID -> new RectUIComponent(stream);
             case TextUIComponent.SER_ID -> new TextUIComponent(stream);
+            case ImageUIComponent.SER_ID -> new ImageUIComponent(stream);
             default -> throw new IllegalStateException("ui component " + id + " not found");
         };
     }

@@ -16,12 +16,14 @@ import java.util.zip.ZipOutputStream;
 public class ClientDataBundler {
     private final HashMap<Identifier, ZipInputStream> renderData;
     private final HashMap<Identifier, InputStream> soundData;
+    private final HashMap<Identifier, InputStream> imageData;
     private final GameServer server;
     private byte[] data;
     public ClientDataBundler(GameServer server) {
         this.server = server;
         this.renderData = new HashMap<>();
         this.soundData = new HashMap<>();
+        this.imageData = new HashMap<>();
     }
     public void addEntity(Identifier id, EntityRegistry.EntityRegistryData registryData){
         if(renderData.containsKey(id))
@@ -32,6 +34,11 @@ public class ClientDataBundler {
         if(soundData.containsKey(id))
             throw new IllegalStateException("sound " + id + " already registered for sound data bundling");
         this.soundData.put(id, sound.get());
+    }
+    public void addImage(Identifier id, Supplier<InputStream> image){
+        if(soundData.containsKey(id))
+            throw new IllegalStateException("image " + id + " already registered for image data bundling");
+        this.soundData.put(id, image.get());
     }
     public void compileData() throws IOException {
         ByteArrayOutputStream stream = new ByteArrayOutputStream();
@@ -57,6 +64,11 @@ public class ClientDataBundler {
         }
         for(var e : soundData.entrySet()){
             zip.putNextEntry(new ZipEntry("sounds/" + e.getKey() + ".wav"));
+            e.getValue().transferTo(zip);
+            zip.closeEntry();
+        }
+        for(var e : imageData.entrySet()){
+            zip.putNextEntry(new ZipEntry("images/" + e.getKey() + ".png"));
             e.getValue().transferTo(zip);
             zip.closeEntry();
         }

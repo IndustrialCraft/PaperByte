@@ -15,6 +15,7 @@ public class MessageRegistryCreator {
         messageRegistry.register(8, GameDataPacket.createDescriptor());
         messageRegistry.register(9, PlaySoundPacket.createDescriptor());
         messageRegistry.register(10, SetGUIPacket.createDescriptor());
+        messageRegistry.register(11, ServerCollisionsDebugPacket.createDescriptor());
         return messageRegistry;
     }
 }

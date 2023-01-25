@@ -24,6 +24,9 @@ public class ClientEntity {
     }
     public void render(SpriteBatch batch, Map<Identifier, Node> entityNodes){
         if(entityNodes.containsKey(type)){
+            if(entityNodes.get(type).animations.get(animation).didAnimationEnd(time)){
+                time = 0;
+            }
             entityNodes.get(type).drawRecursively(new Transform(position.x()*PaperByteMain.METER_TO_PIXEL, position.y()*PaperByteMain.METER_TO_PIXEL, 0, 1, 1), batch, animation, time);
         } else {
             //System.out.println("rendering: " + entityId + ":" + type.toString());
@@ -32,10 +35,9 @@ public class ClientEntity {
         }
         time += Gdx.graphics.getDeltaTime();
     }
-    public void setAnimation(int animation, Map<Identifier, Node> entityNodes){
+    public void setAnimation(String animation, Map<Identifier, Node> entityNodes){
         if(entityNodes.containsKey(type)){
-            String anim = entityNodes.get(type).animations.keySet().stream().toList().get(animation);
-            this.animation = anim==null?"default":anim;
+            this.animation = animation;
         }
         this.time = 0;
     }

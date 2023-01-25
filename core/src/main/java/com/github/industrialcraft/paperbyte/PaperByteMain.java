@@ -6,13 +6,19 @@ import com.badlogic.gdx.Input;
 import com.badlogic.gdx.InputProcessor;
 import com.badlogic.gdx.audio.Sound;
 import com.badlogic.gdx.files.FileHandle;
+import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.GL20;
 import com.badlogic.gdx.graphics.OrthographicCamera;
 import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.BitmapFont;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
+import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.math.Vector3;
+import com.badlogic.gdx.physics.box2d.ChainShape;
+import com.badlogic.gdx.physics.box2d.CircleShape;
+import com.badlogic.gdx.physics.box2d.EdgeShape;
+import com.badlogic.gdx.physics.box2d.PolygonShape;
 import com.github.industrialcraft.folder.Node;
 import com.github.industrialcraft.folder.SaverLoader;
 import com.github.industrialcraft.identifier.Identifier;
@@ -25,6 +31,7 @@ import com.google.gson.JsonParser;
 import java.io.*;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
@@ -49,6 +56,8 @@ public class PaperByteMain extends ApplicationAdapter implements InputProcessor 
 	private ArrayList<Integer> typedChars;
 	private float scrollX;
 	private float scrollY;
+	private List<ServerCollisionsDebugPacket.RenderData> collisionRenderData;
+	private int collisionRenderDataInvalidationTimer;
 	public PaperByteMain(CustomAPI customAPI) {
 		this.customAPI = customAPI;
 	}
@@ -70,6 +79,8 @@ public class PaperByteMain extends ApplicationAdapter implements InputProcessor 
 		this.gui = new GUI();
 		typedChars = new ArrayList<>();
 		this.entityNodes = null;
+		this.collisionRenderData = null;
+		this.collisionRenderDataInvalidationTimer = -1;
 	}
 
 	@Override
@@ -85,15 +96,72 @@ public class PaperByteMain extends ApplicationAdapter implements InputProcessor 
 			clientEntity.render(batch, entityNodes);
 		}
 		batch.end();
-		shapeRenderer.setProjectionMatrix(camera.combined);
-		shapeRenderer.setAutoShapeType(true);
-		//shapeRenderer.begin();
-		//shapeRenderer.end();
+		if(collisionRenderDataInvalidationTimer >= 0){
+			collisionRenderDataInvalidationTimer--;
+			if(collisionRenderDataInvalidationTimer == -1)
+				collisionRenderData = null;
+		}
+		if(collisionRenderData != null) {
+			shapeRenderer.setProjectionMatrix(camera.combined);
+			shapeRenderer.setAutoShapeType(true);
+			shapeRenderer.setColor(Color.GREEN);
+			shapeRenderer.begin();
+			for(var e : collisionRenderData){
+				switch (e.getType()){
+					case Circle -> {
+						ServerCollisionsDebugPacket.ServerCollisionRenderDataCircle circle = (ServerCollisionsDebugPacket.ServerCollisionRenderDataCircle) e;
+						Vector2 vec = circle.pos().cpy();
+						e.getTransform().mul(vec);
+						shapeRenderer.circle(vec.x*METER_TO_PIXEL, vec.y*METER_TO_PIXEL, circle.radius()*METER_TO_PIXEL);
+					}
+					case Edge -> {
+						Vector2[] vertices = new Vector2[2];
+						ServerCollisionsDebugPacket.ServerCollisionRenderDataEdge edge = (ServerCollisionsDebugPacket.ServerCollisionRenderDataEdge) e;
+						vertices[0] = edge.v1().cpy();
+						vertices[1] = edge.v2().cpy();
+						e.getTransform().mul(vertices[0]);
+						e.getTransform().mul(vertices[1]);
+						drawSolidPolygon(vertices, 2, true);
+					}
+					case Polygon -> {
+						ServerCollisionsDebugPacket.ServerCollisionRenderDataPolygon polygon = (ServerCollisionsDebugPacket.ServerCollisionRenderDataPolygon) e;
+						Vector2[] vertices = new Vector2[polygon.vertices().length];
+						for(int i = 0;i < polygon.vertices().length;i++){
+							vertices[i] = polygon.vertices()[i].cpy();
+							e.getTransform().mul(vertices[i]);
+						}
+						drawSolidPolygon(vertices, vertices.length, true);
+					}
+					case Chain -> {
+						ServerCollisionsDebugPacket.ServerCollisionRenderDataChain chain = (ServerCollisionsDebugPacket.ServerCollisionRenderDataChain) e;
+						Vector2[] vertices = new Vector2[chain.vertices().length];
+						for(int i = 0;i < chain.vertices().length;i++){
+							vertices[i] = chain.vertices()[i].cpy();
+							e.getTransform().mul(vertices[i]);
+						}
+						drawSolidPolygon(vertices, vertices.length, true);
+					}
+				}
+			}
+			shapeRenderer.end();
+		}
 		this.gui.draw();
 		this.playingSounds.values().removeIf(soundWithID -> !customAPI.isPlaying((int) soundWithID.id()));
 		//todo: sound volume based on distance
 		sendInputPacket();
 		Gdx.input.setInputProcessor(this);
+	}
+	private Vector2 lv = new Vector2();
+	private Vector2 f = new Vector2();
+	private void drawSolidPolygon (Vector2[] vertices, int vertexCount, boolean closed) {
+		lv.set(vertices[0]);
+		f.set(vertices[0]);
+		for (int i = 1; i < vertexCount; i++) {
+			Vector2 v = vertices[i];
+			shapeRenderer.line(lv.x*METER_TO_PIXEL, lv.y*METER_TO_PIXEL, v.x*METER_TO_PIXEL, v.y*METER_TO_PIXEL);
+			lv.set(v);
+		}
+		if (closed) shapeRenderer.line(f.x*METER_TO_PIXEL, f.y*METER_TO_PIXEL, lv.x*METER_TO_PIXEL, lv.y*METER_TO_PIXEL);
 	}
 	public void sendInputPacket(){
 		Vector3 worldMouse = camera.unproject(new Vector3(Gdx.input.getX(), Gdx.input.getY(), 0));
@@ -137,7 +205,6 @@ public class PaperByteMain extends ApplicationAdapter implements InputProcessor 
 				try {
 					loadNodes(new ByteArrayInputStream(gameDataPacket.clientData));
 				} catch (IOException e) {
-					e.printStackTrace();
 					throw new RuntimeException(e);
 				}
 			}
@@ -153,6 +220,7 @@ public class PaperByteMain extends ApplicationAdapter implements InputProcessor 
 			}
 			if(msg instanceof ChangeWorldPacket){
 				clientEntities.clear();
+				collisionRenderData = null;
 			}
 			if(msg instanceof MoveEntitiesPacket moveEntitiesPacket){
 				for(int i = 0;i < moveEntitiesPacket.entityIds.size();i++){
@@ -181,6 +249,10 @@ public class PaperByteMain extends ApplicationAdapter implements InputProcessor 
 			if(msg instanceof SetGUIPacket setGUIPacket){
 				gui.fromPacket(setGUIPacket);
 			}
+			if(msg instanceof ServerCollisionsDebugPacket serverCollisionsDebugPacket){
+				collisionRenderData = serverCollisionsDebugPacket.data;
+				collisionRenderDataInvalidationTimer = 10;
+			}
 		}
 		@Override
 		public void exception(NetXClient user, Throwable exception) {
@@ -200,10 +272,13 @@ public class PaperByteMain extends ApplicationAdapter implements InputProcessor 
 		ZipEntry entry;
 		while((entry = zip.getNextEntry()) != null){
 			if(entry.getName().endsWith(".png")){
+				ByteArrayOutputStream stream1 = new ByteArrayOutputStream();
+				zip.transferTo(stream1);
+				byte[] data = stream1.toByteArray();
 				textures.put(entry.getName(), new Texture(new FileHandle(entry.getName()){
 					@Override
 					public InputStream read() {
-						return new NonClosingInputStreamWrapper(zip);
+						return new ByteArrayInputStream(data);
 					}
 				}));
 			} else if(entry.getName().endsWith(".json")){

@@ -27,6 +27,7 @@ public class GameServer extends Thread{
     private final NetXServer networkServer;
     private final EntityRegistry entityRegistry;
     private final SoundRegistry soundRegistry;
+    private final ImageRegistry imageRegistry;
     private final LinkedList<ServerWorld> worldsToAdd;
     private final ArrayList<ServerWorld> worlds;
     private long serverStartTime;
@@ -43,16 +44,19 @@ public class GameServer extends Thread{
         this.networkServer = new NetXServer(4321, MessageRegistryCreator.createMessageRegistry());
         this.entityRegistry = new EntityRegistry();
         this.soundRegistry = new SoundRegistry();
+        this.imageRegistry = new ImageRegistry();
         this.worldsToAdd = new LinkedList<>();
         this.worlds = new ArrayList<>();
         this.serverAliveTicks = 0;
-        EventManager.callEvent(new InitializeRegistriesEvent(this, entityRegistry, soundRegistry));
+        EventManager.callEvent(new InitializeRegistriesEvent(this, entityRegistry, soundRegistry, imageRegistry));
         this.entityRegistry.lock();
         this.soundRegistry.lock();
+        this.imageRegistry.lock();
         this.logger.info("Loaded %s entities", this.entityRegistry.getRegisteredEntities().size());
         this.clientDataBundler = new ClientDataBundler(this);
         this.entityRegistry.registerToBundler(clientDataBundler);
         this.soundRegistry.registerToBundler(clientDataBundler);
+        this.imageRegistry.registerToBundler(clientDataBundler);
         try {
             this.clientDataBundler.compileData();
         } catch (IOException e) {
