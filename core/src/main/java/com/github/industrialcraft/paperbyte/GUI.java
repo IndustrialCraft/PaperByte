@@ -1,17 +1,22 @@
 package com.github.industrialcraft.paperbyte;
 
 import com.badlogic.gdx.graphics.Camera;
+import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.OrthographicCamera;
+import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.BitmapFont;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
+import com.github.industrialcraft.identifier.Identifier;
 import com.github.industrialcraft.paperbyte.common.gui.BasicUIComponent;
+import com.github.industrialcraft.paperbyte.common.gui.ImageUIComponent;
 import com.github.industrialcraft.paperbyte.common.gui.RectUIComponent;
 import com.github.industrialcraft.paperbyte.common.gui.TextUIComponent;
 import com.github.industrialcraft.paperbyte.common.net.SetGUIPacket;
 
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 
 public class GUI {
     private ShapeRenderer shapeRenderer;
@@ -19,7 +24,8 @@ public class GUI {
     private Camera camera;
     private List<BasicUIComponent> uiComponents;
     private BitmapFont font;
-    public GUI() {
+    private PaperByteMain client;
+    public GUI(PaperByteMain client) {
         this.shapeRenderer = new ShapeRenderer();
         this.spriteBatch = new SpriteBatch();
         this.camera = new OrthographicCamera(2000, 2000);
@@ -28,6 +34,7 @@ public class GUI {
         this.shapeRenderer.setAutoShapeType(true);
         this.font = new BitmapFont();
         this.uiComponents = Collections.EMPTY_LIST;
+        this.client = client;
     }
     public void draw(){
         for(BasicUIComponent component : uiComponents){
@@ -43,6 +50,12 @@ public class GUI {
                 font.getData().setScale(textUIComponent.scale);
                 font.draw(spriteBatch, textUIComponent.text, textUIComponent.x, textUIComponent.y);
                 font.getData().setScale(1/textUIComponent.scale);
+                spriteBatch.end();
+            }
+            if(component instanceof ImageUIComponent imageUIComponent){
+                spriteBatch.begin();
+                spriteBatch.setColor(imageUIComponent.color);
+                spriteBatch.draw(client.getImageTextures().get(client.getImagesNetId().get(imageUIComponent.image.netId())), imageUIComponent.x, imageUIComponent.y, imageUIComponent.width, imageUIComponent.height);
                 spriteBatch.end();
             }
         }

@@ -18,6 +18,9 @@ public class ImageUIComponent extends BasicUIComponent{
         this.height = height;
         this.image = image;
     }
+    public ImageUIComponent(float x, float y, float width, float height, Image image) {
+        this(Color.WHITE, x, y, width, height, image);
+    }
     public ImageUIComponent(DataInputStream stream) throws IOException {
         super(stream);
         this.width = stream.readFloat();

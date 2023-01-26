@@ -7,11 +7,16 @@ import com.github.industrialcraft.paperbyte.PaperByteMain;
 /** Launches the desktop (LWJGL3) application. */
 public class Lwjgl3Launcher {
 	public static void main(String[] args) {
-		createApplication();
+		if(args.length != 1)
+			throw new IllegalArgumentException("connection address not specified");
+		String[] split = args[0].split(":");
+		if(split.length != 2)
+			throw new IllegalArgumentException("connection address must be in format host:port");
+		createApplication(split[0], Integer.parseInt(split[1]));
 	}
 
-	private static Lwjgl3Application createApplication() {
-		return new Lwjgl3Application(new PaperByteMain(new LWJGLCustomApi()), getDefaultConfiguration());
+	private static Lwjgl3Application createApplication(String host, int port) {
+		return new Lwjgl3Application(new PaperByteMain(new LWJGLCustomApi(), host, port), getDefaultConfiguration());
 	}
 
 	private static Lwjgl3ApplicationConfiguration getDefaultConfiguration() {

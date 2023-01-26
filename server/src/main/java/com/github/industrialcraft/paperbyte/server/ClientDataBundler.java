@@ -36,9 +36,9 @@ public class ClientDataBundler {
         this.soundData.put(id, sound.get());
     }
     public void addImage(Identifier id, Supplier<InputStream> image){
-        if(soundData.containsKey(id))
+        if(imageData.containsKey(id))
             throw new IllegalStateException("image " + id + " already registered for image data bundling");
-        this.soundData.put(id, image.get());
+        this.imageData.put(id, image.get());
     }
     public void compileData() throws IOException {
         ByteArrayOutputStream stream = new ByteArrayOutputStream();

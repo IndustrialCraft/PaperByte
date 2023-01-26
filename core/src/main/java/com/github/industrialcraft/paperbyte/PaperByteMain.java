@@ -15,10 +15,6 @@ import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
 import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.math.Vector3;
-import com.badlogic.gdx.physics.box2d.ChainShape;
-import com.badlogic.gdx.physics.box2d.CircleShape;
-import com.badlogic.gdx.physics.box2d.EdgeShape;
-import com.badlogic.gdx.physics.box2d.PolygonShape;
 import com.github.industrialcraft.folder.Node;
 import com.github.industrialcraft.folder.SaverLoader;
 import com.github.industrialcraft.identifier.Identifier;
@@ -29,16 +25,13 @@ import com.github.industrialcraft.paperbyte.common.util.NonClosingInputStreamWra
 import com.google.gson.JsonParser;
 
 import java.io.*;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 
 /** {@link com.badlogic.gdx.ApplicationListener} implementation shared by all platforms. */
 public class PaperByteMain extends ApplicationAdapter implements InputProcessor {
-	public static float METER_TO_PIXEL = 10;
+	public static float METER_TO_PIXEL = 50;
 	public static BitmapFont FONT;
 
 	private SpriteBatch batch;
@@ -51,6 +44,8 @@ public class PaperByteMain extends ApplicationAdapter implements InputProcessor 
 	private Map<Integer, Identifier> soundRegistry;
 	private Map<Identifier, Sound> sounds;
 	private Map<Integer, SoundWithID> playingSounds;
+	private Map<Identifier,Texture> imageTextures;
+	private Map<Integer,Identifier> imagesNetId;
 	private final CustomAPI customAPI;
 	private GUI gui;
 	private ArrayList<Integer> typedChars;
@@ -58,8 +53,12 @@ public class PaperByteMain extends ApplicationAdapter implements InputProcessor 
 	private float scrollY;
 	private List<ServerCollisionsDebugPacket.RenderData> collisionRenderData;
 	private int collisionRenderDataInvalidationTimer;
-	public PaperByteMain(CustomAPI customAPI) {
+	private final String host;
+	private final int port;
+	public PaperByteMain(CustomAPI customAPI, String host, int port) {
 		this.customAPI = customAPI;
+		this.host = host;
+		this.port = port;
 	}
 	@Override
 	public void create() {
@@ -74,15 +73,21 @@ public class PaperByteMain extends ApplicationAdapter implements InputProcessor 
 		this.playingSounds = new HashMap<>();
 		this.camera = new OrthographicCamera(Gdx.graphics.getWidth(), Gdx.graphics.getHeight());
 		this.camera.update();
-		this.networkClient = new NetXClient("localhost", 4321, MessageRegistryCreator.createMessageRegistry());
+		this.networkClient = new NetXClient(host, port, MessageRegistryCreator.createMessageRegistry());
 		this.networkClient.start();
-		this.gui = new GUI();
+		this.gui = new GUI(this);
 		typedChars = new ArrayList<>();
 		this.entityNodes = null;
 		this.collisionRenderData = null;
 		this.collisionRenderDataInvalidationTimer = -1;
+		this.imageTextures = new HashMap<>();
 	}
-
+	public Map<Identifier, Texture> getImageTextures() {
+		return imageTextures;
+	}
+	public Map<Integer, Identifier> getImagesNetId() {
+		return imagesNetId;
+	}
 	@Override
 	public void render() {
 		processNetworkMessages();
@@ -190,7 +195,7 @@ public class PaperByteMain extends ApplicationAdapter implements InputProcessor 
 	private ClientMessage.Visitor CLIENT_MESSAGE_VISITOR = new ClientMessage.Visitor() {
 		@Override
 		public void connect(NetXClient user) {
-
+			user.send(new ClientLoginPacket(Locale.getDefault().toString()));
 		}
 		@Override
 		public void disconnect(NetXClient user) {
@@ -202,6 +207,7 @@ public class PaperByteMain extends ApplicationAdapter implements InputProcessor 
 				System.out.println("gamedata");
 				PaperByteMain.this.entityRegistry = gameDataPacket.entityRegistry;
 				PaperByteMain.this.soundRegistry = gameDataPacket.soundRegistry;
+				PaperByteMain.this.imagesNetId = gameDataPacket.imageRegistry;
 				try {
 					loadNodes(new ByteArrayInputStream(gameDataPacket.clientData));
 				} catch (IOException e) {
@@ -272,19 +278,28 @@ public class PaperByteMain extends ApplicationAdapter implements InputProcessor 
 		ZipEntry entry;
 		while((entry = zip.getNextEntry()) != null){
 			if(entry.getName().endsWith(".png")){
-				ByteArrayOutputStream stream1 = new ByteArrayOutputStream();
-				zip.transferTo(stream1);
-				byte[] data = stream1.toByteArray();
-				textures.put(entry.getName(), new Texture(new FileHandle(entry.getName()){
-					@Override
-					public InputStream read() {
-						return new ByteArrayInputStream(data);
-					}
-				}));
+				if(entry.getName().startsWith("images/")){
+					imageTextures.put(Identifier.parse(entry.getName().split("/")[1].replace(".png","")), new Texture(new FileHandle(entry.getName()){
+						@Override
+						public InputStream read() {
+							return new NonClosingInputStreamWrapper(zip);
+						}
+					}));
+				} else {
+					ByteArrayOutputStream stream1 = new ByteArrayOutputStream();
+					zip.transferTo(stream1);
+					byte[] data = stream1.toByteArray();
+					textures.put(entry.getName(), new Texture(new FileHandle(entry.getName()) {
+						@Override
+						public InputStream read() {
+							return new ByteArrayInputStream(data);
+						}
+					}));
+				}
 			} else if(entry.getName().endsWith(".json")){
 				renderData.put(entry.getName(), new String(zip.readAllBytes()));
 			} else if(entry.getName().endsWith(".wav")){
-				sounds.put(Identifier.parse(entry.getName().split("/")[0].replace(".wav","")), Gdx.audio.newSound(new FileHandle(entry.getName()){
+				sounds.put(Identifier.parse(entry.getName().split("/")[1].replace(".wav","")), Gdx.audio.newSound(new FileHandle(entry.getName()){
 					@Override
 					public InputStream read() {
 						return new NonClosingInputStreamWrapper(zip);

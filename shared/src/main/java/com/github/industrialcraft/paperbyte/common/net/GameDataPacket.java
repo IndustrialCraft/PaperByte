@@ -13,10 +13,12 @@ import java.util.Map;
 public class GameDataPacket {
     public final Map<Integer, Identifier> entityRegistry;
     public final Map<Integer, Identifier> soundRegistry;
+    public final Map<Integer, Identifier> imageRegistry;
     public final byte[] clientData;
-    public GameDataPacket(Map<Integer, Identifier> entityRegistry, Map<Integer, Identifier> soundRegistry, byte[] clientData) {
+    public GameDataPacket(Map<Integer, Identifier> entityRegistry, Map<Integer, Identifier> soundRegistry, Map<Integer, Identifier> imageRegistry, byte[] clientData) {
         this.entityRegistry = entityRegistry;
         this.soundRegistry = soundRegistry;
+        this.imageRegistry = imageRegistry;
         this.clientData = clientData;
     }
     public GameDataPacket(DataInputStream stream) throws IOException {
@@ -32,6 +34,12 @@ public class GameDataPacket {
             modSoundRegistry.put(stream.readInt(), Identifier.parse(stream.readUTF()));
         }
         this.soundRegistry = Collections.unmodifiableMap(modSoundRegistry);
+        HashMap<Integer,Identifier> modImageRegistry = new HashMap<>();
+        size = stream.readInt();
+        for(int i = 0;i < size;i++){
+            modImageRegistry.put(stream.readInt(), Identifier.parse(stream.readUTF()));
+        }
+        this.imageRegistry = Collections.unmodifiableMap(modImageRegistry);
         int clientDataSize = stream.readInt();
         this.clientData = new byte[clientDataSize];
         for(int i = 0;i < clientDataSize;i++){
@@ -46,6 +54,11 @@ public class GameDataPacket {
         }
         stream.writeInt(soundRegistry.size());
         for(var entry : soundRegistry.entrySet()){
+            stream.writeInt(entry.getKey());
+            stream.writeUTF(entry.getValue().toString());
+        }
+        stream.writeInt(imageRegistry.size());
+        for(var entry : imageRegistry.entrySet()){
             stream.writeInt(entry.getKey());
             stream.writeUTF(entry.getValue().toString());
         }

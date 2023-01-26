@@ -1,10 +1,9 @@
 package com.github.industrialcraft.paperbyte.server.world;
 
 import com.badlogic.gdx.physics.box2d.*;
+import com.github.industrialcraft.paperbyte.common.net.ServerCollisionsDebugPacket;
 import com.github.industrialcraft.paperbyte.server.GameServer;
-import com.github.industrialcraft.paperbyte.server.events.BeginContactEvent;
 import com.github.industrialcraft.paperbyte.server.events.CreateWorldEvent;
-import com.github.industrialcraft.paperbyte.server.events.EndContactEvent;
 import com.github.industrialcraft.paperbyte.server.events.WorldTickEvent;
 import net.cydhra.eventsystem.EventManager;
 
@@ -29,14 +28,25 @@ public class ServerWorld {
         CreateWorldEvent createWorldEvent = new CreateWorldEvent(parent, this);
         EventManager.callEvent(createWorldEvent);
         this.physicsWorld = new World(createWorldEvent.gravity, true);
+        this.physicsWorld.setContactFilter((fixtureA, fixtureB) -> {
+            ServerEntity eA = (ServerEntity) fixtureA.getBody().getUserData();
+            ServerEntity eB = (ServerEntity) fixtureB.getBody().getUserData();
+            return eA.shouldCollide(eB) && eB.shouldCollide(eA);
+        });
         this.physicsWorld.setContactListener(new ContactListener() {
             @Override
             public void beginContact(Contact contact) {
-                EventManager.callEvent(new BeginContactEvent(parent, ServerWorld.this, contact));
+                ServerEntity eA = (ServerEntity) contact.getFixtureA().getBody().getUserData();
+                ServerEntity eB = (ServerEntity) contact.getFixtureB().getBody().getUserData();
+                eA.onCollision(eB, contact, true);
+                eB.onCollision(eA, contact, false);
             }
             @Override
             public void endContact(Contact contact) {
-                EventManager.callEvent(new EndContactEvent(parent, ServerWorld.this, contact));
+                ServerEntity eA = (ServerEntity) contact.getFixtureA().getBody().getUserData();
+                ServerEntity eB = (ServerEntity) contact.getFixtureB().getBody().getUserData();
+                eA.onEndCollision(eB, contact, true);
+                eB.onEndCollision(eA, contact, false);
             }
             @Override
             public void preSolve(Contact contact, Manifold oldManifold) {

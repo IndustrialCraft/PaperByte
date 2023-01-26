@@ -3,10 +3,7 @@ package com.github.industrialcraft.paperbyte.server;
 import com.github.industrialcraft.netx.NetXServer;
 import com.github.industrialcraft.netx.ServerMessage;
 import com.github.industrialcraft.netx.SocketUser;
-import com.github.industrialcraft.paperbyte.common.net.AddEntityPacket;
-import com.github.industrialcraft.paperbyte.common.net.ClientInputPacket;
-import com.github.industrialcraft.paperbyte.common.net.GameDataPacket;
-import com.github.industrialcraft.paperbyte.common.net.MessageRegistryCreator;
+import com.github.industrialcraft.paperbyte.common.net.*;
 import com.github.industrialcraft.paperbyte.server.events.*;
 import com.github.industrialcraft.paperbyte.server.world.EntityRegistry;
 import com.github.industrialcraft.paperbyte.server.world.ServerPlayerEntity;
@@ -38,10 +35,10 @@ public class GameServer extends Thread{
     public final Logger logger;
     private Map<Class, Plugin> plugins;
     private List<WeakReference<PlayerMap>> playerMaps;
-    public GameServer() {
+    public GameServer(int port) {
         this.logger = new Logger(this);
         loadMods();
-        this.networkServer = new NetXServer(4321, MessageRegistryCreator.createMessageRegistry());
+        this.networkServer = new NetXServer(port, MessageRegistryCreator.createMessageRegistry());
         this.entityRegistry = new EntityRegistry();
         this.soundRegistry = new SoundRegistry();
         this.imageRegistry = new ImageRegistry();
@@ -122,23 +119,7 @@ public class GameServer extends Thread{
     private final ServerMessage.Visitor SERVER_MESSAGE_VISITOR = new ServerMessage.Visitor() {
         @Override
         public void connect(SocketUser user) {
-            user.send(new GameDataPacket(entityRegistry.getRegisteredEntities(), soundRegistry.getRegisteredSounds(), clientDataBundler.getData()), true);
-            SocketUserData socketUserData = new SocketUserData(user);
-            user.setUserData(socketUserData);
-            PlayerJoinEvent joinEvent = new PlayerJoinEvent(GameServer.this, socketUserData);
-            EventManager.callEvent(joinEvent);
-            if(joinEvent.playerSupplier == null){
-                user.disconnect();
-                throw new IllegalStateException("player supplier not specified");
-            }
-            if(joinEvent.world == null){
-                user.disconnect();
-                throw new IllegalStateException("player spawn world not specified");
-            }
-            ServerPlayerEntity playerEntity = joinEvent.playerSupplier.get();
-            socketUserData.setPlayerEntity(playerEntity);
-            playerEntity.getWorld().worldPacketAnnouncer.syncEntitiesToNewPlayer(user, true);
-            user.send(new AddEntityPacket(playerEntity.entityId, getEntityRegistry().resolveNetworkId(playerEntity), playerEntity.getPosition()));
+
         }
         @Override
         public void disconnect(SocketUser user) {
@@ -155,8 +136,32 @@ public class GameServer extends Thread{
         }
         @Override
         public void message(SocketUser user, Object msg) {
+            ServerPlayerEntity player = user.getUserData()==null?null:user.<SocketUserData>getUserData().getPlayerEntity();
+            if(player == null){
+                if(msg instanceof ClientLoginPacket clientLoginPacket){
+                    user.send(new GameDataPacket(entityRegistry.getRegisteredEntities(), soundRegistry.getRegisteredSounds(), imageRegistry.getRegisteredImages(), clientDataBundler.getData()), true);
+                    SocketUserData socketUserData = new SocketUserData(user);
+                    user.setUserData(socketUserData);
+                    System.out.println(clientLoginPacket.locale);
+                    PlayerJoinEvent joinEvent = new PlayerJoinEvent(GameServer.this, socketUserData, clientLoginPacket.locale);
+                    EventManager.callEvent(joinEvent);
+                    if(joinEvent.playerSupplier == null){
+                        user.disconnect();
+                        throw new IllegalStateException("player supplier not specified");
+                    }
+                    if(joinEvent.world == null){
+                        user.disconnect();
+                        throw new IllegalStateException("player spawn world not specified");
+                    }
+                    ServerPlayerEntity playerEntity = joinEvent.playerSupplier.get();
+                    socketUserData.setPlayerEntity(playerEntity);
+                    playerEntity.getWorld().worldPacketAnnouncer.syncEntitiesToNewPlayer(user, true);
+                    user.send(new AddEntityPacket(playerEntity.entityId, getEntityRegistry().resolveNetworkId(playerEntity), playerEntity.getPosition()));
+                }
+                return;
+            }
             if(msg instanceof ClientInputPacket clientInputPacket){
-                user.<SocketUserData>getUserData().getPlayerEntity().handleClientInput(clientInputPacket);
+                player.handleClientInput(clientInputPacket);
             }
         }
         @Override
