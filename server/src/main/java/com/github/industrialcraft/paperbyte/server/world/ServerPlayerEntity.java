@@ -5,6 +5,7 @@ import com.github.industrialcraft.paperbyte.common.net.ClientInputPacket;
 import com.github.industrialcraft.paperbyte.common.net.SetGUIPacket;
 import com.github.industrialcraft.paperbyte.common.util.Position;
 import com.github.industrialcraft.paperbyte.server.SocketUserData;
+import com.github.industrialcraft.paperbyte.server.events.PlayerInputEvent;
 import com.github.industrialcraft.paperbyte.server.events.SendGUIEvent;
 import net.cydhra.eventsystem.EventManager;
 
@@ -13,12 +14,14 @@ public abstract class ServerPlayerEntity extends ServerEntity {
     private float cameraZoom;
     private boolean shouldResyncUI;
     private boolean sendHitBoxes;
+    private ClientInputPacket lastInput;
     public ServerPlayerEntity(Position position, ServerWorld world, SocketUserData socketUserData) {
         super(position, world);
         this.socketUserData = socketUserData;
         this.cameraZoom = 1;
         markUIDirty();
         this.sendHitBoxes = false;
+        this.lastInput = null;
     }
 
     @Override
@@ -62,5 +65,13 @@ public abstract class ServerPlayerEntity extends ServerEntity {
         Position pos = getPosition();
         socketUserData.socketUser.send(new CameraUpdatePacket(pos.x(), pos.y(), cameraZoom), false);
     }
-    public abstract void handleClientInput(ClientInputPacket message);
+    public void handleClientInput(ClientInputPacket message){
+        this.lastInput = message;
+        PlayerInputEvent event = new PlayerInputEvent(getWorld().parent, this);
+        EventManager.callEvent(event);
+        event.firePacket(message);
+    }
+    public ClientInputPacket getLastInput() {
+        return lastInput;
+    }
 }

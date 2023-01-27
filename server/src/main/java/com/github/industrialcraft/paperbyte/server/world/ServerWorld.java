@@ -61,6 +61,10 @@ public class ServerWorld {
     public void tick(){
         this.entities.addAll(entitiesToAdd);
         this.entitiesToAdd.clear();
+        this.entities.forEach(entity -> {
+            if(entity.isRemoved() && entity.getPhysicsBody() != null)
+                getPhysicsWorld().destroyBody(entity.getPhysicsBody());
+        });
         this.entities.removeIf(entity -> entity.isRemoved() || entity.getWorld() != this);
         this.entities.forEach(ServerEntity::tick);
         EventManager.callEvent(new WorldTickEvent(parent, this));

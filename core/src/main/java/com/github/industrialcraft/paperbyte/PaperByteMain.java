@@ -170,8 +170,8 @@ public class PaperByteMain extends ApplicationAdapter implements InputProcessor 
 	}
 	public void sendInputPacket(){
 		Vector3 worldMouse = camera.unproject(new Vector3(Gdx.input.getX(), Gdx.input.getY(), 0));
-		float worldMouseX = worldMouse.x;
-		float worldMouseY = worldMouse.y;
+		float worldMouseX = worldMouse.x / PaperByteMain.METER_TO_PIXEL;
+		float worldMouseY = worldMouse.y / PaperByteMain.METER_TO_PIXEL;
 		int screenMouseX = Gdx.input.getX();
 		int screenMouseY = Gdx.input.getY();
 		int screenSizeX = Gdx.graphics.getWidth();
@@ -240,7 +240,7 @@ public class PaperByteMain extends ApplicationAdapter implements InputProcessor 
 				camera.position.y = cameraUpdatePacket.y * PaperByteMain.METER_TO_PIXEL;
 				camera.zoom = cameraUpdatePacket.zoom;
 				camera.update();
-				Gdx.graphics.setTitle("x: " + camera.position.x + " y: " + camera.position.y);
+				Gdx.graphics.setTitle("x: " + (camera.position.x/METER_TO_PIXEL) + " y: " + (camera.position.y/METER_TO_PIXEL));
 			}
 			if(msg instanceof PlaySoundPacket playSoundPacket){
 				Identifier soundId = soundRegistry.get(playSoundPacket.soundType);

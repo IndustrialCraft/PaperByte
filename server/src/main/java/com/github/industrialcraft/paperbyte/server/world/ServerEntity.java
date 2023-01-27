@@ -1,5 +1,6 @@
 package com.github.industrialcraft.paperbyte.server.world;
 
+import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.physics.box2d.Body;
 import com.badlogic.gdx.physics.box2d.Contact;
 import com.badlogic.gdx.physics.box2d.World;
@@ -58,16 +59,21 @@ public abstract class ServerEntity {
     }
     public void tick(){
         if(this.physicsBody != null) {
+            if(scheduledBodyPosition != null) {
+                physicsBody.setTransform(scheduledBodyPosition.x(), scheduledBodyPosition.y(), physicsBody.getAngle());
+                scheduledBodyPosition = null;
+            }
             this.position = Position.fromVector2(physicsBody.getPosition());
             this.world.worldPacketAnnouncer.announceEntityMove(this);
             if(this instanceof ServerPlayerEntity serverPlayerEntity)
                 serverPlayerEntity.updateCamera();
         }
     }
+    private Position scheduledBodyPosition = null;
     public void teleport(Position newPosition){
         this.position = newPosition;
         if(this.physicsBody != null)
-            this.physicsBody.setTransform(position.x(), position.y(), this.physicsBody.getAngle());
+            scheduledBodyPosition = newPosition;
         this.world.worldPacketAnnouncer.announceEntityMove(this);
     }
     public void teleport(Position newPosition, ServerWorld newWorld){
@@ -75,7 +81,7 @@ public abstract class ServerEntity {
             return;
         this.position = newPosition;
         if(this.physicsBody != null)
-            this.physicsBody.setTransform(position.x(), position.y(), this.physicsBody.getAngle());
+            scheduledBodyPosition = position;
         if(this.world != newWorld) {
             if(physicsBody != null) {
                 world.getPhysicsWorld().destroyBody(physicsBody);
