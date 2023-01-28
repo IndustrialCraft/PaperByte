@@ -15,11 +15,11 @@ public class ClientEntity {
     public Position position;
     private String animation;
     private float time;
-    public ClientEntity(int entityId, Identifier type, Position position) {
+    public ClientEntity(int entityId, Identifier type, Position position, String animation) {
         this.entityId = entityId;
         this.type = type;
         this.position = position;
-        this.animation = "default";
+        this.animation = animation;
         this.time = 0;
     }
     public void render(SpriteBatch batch, Map<Identifier, Node> entityNodes){

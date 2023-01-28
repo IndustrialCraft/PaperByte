@@ -156,7 +156,7 @@ public class GameServer extends Thread{
                     ServerPlayerEntity playerEntity = joinEvent.playerSupplier.get();
                     socketUserData.setPlayerEntity(playerEntity);
                     playerEntity.getWorld().worldPacketAnnouncer.syncEntitiesToNewPlayer(user, true);
-                    user.send(new AddEntityPacket(playerEntity.entityId, getEntityRegistry().resolveNetworkId(playerEntity), playerEntity.getPosition()));
+                    user.send(new AddEntityPacket(playerEntity.entityId, getEntityRegistry().resolveNetworkId(playerEntity), playerEntity.getPosition(), playerEntity.getAnimationController().getCurrentAnimation()));
                 }
                 return;
             }

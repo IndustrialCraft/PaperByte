@@ -1,13 +1,9 @@
 package com.github.industrialcraft.paperbyte.server.world;
 
-import com.badlogic.gdx.Version;
 import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.physics.box2d.*;
 import com.github.industrialcraft.netx.SocketUser;
-import com.github.industrialcraft.paperbyte.common.net.AddEntityPacket;
-import com.github.industrialcraft.paperbyte.common.net.MoveEntitiesPacket;
-import com.github.industrialcraft.paperbyte.common.net.RemoveEntityPacket;
-import com.github.industrialcraft.paperbyte.common.net.ServerCollisionsDebugPacket;
+import com.github.industrialcraft.paperbyte.common.net.*;
 import com.github.industrialcraft.paperbyte.common.util.Position;
 import com.github.industrialcraft.paperbyte.server.GameServer;
 import com.github.industrialcraft.paperbyte.server.SocketUserData;
@@ -26,7 +22,7 @@ public class WorldPacketAnnouncer {
         ArrayList<ServerCollisionsDebugPacket.RenderData> collisionRenderData = new ArrayList<>();
         for(var ent : world.getEntities()){
             Body body = ent.getPhysicsBody();
-            if(body != null){
+            if(body != null && body.isActive()){
                 Transform transform = body.getTransform();
                 transform = new Transform(transform.getPosition(), transform.getRotation());
                 for(var fixture : body.getFixtureList()){
@@ -80,18 +76,22 @@ public class WorldPacketAnnouncer {
         for(ServerEntity entity : world.getEntities()){
             if(dontSendPlayer && entity == newPlayerEntity)
                 continue;
-            newPlayer.send(new AddEntityPacket(entity.entityId, world.parent.getEntityRegistry().resolveNetworkId(entity), entity.getPosition()), false);
+            //todo: sync animations start times
+            newPlayer.send(new AddEntityPacket(entity.entityId, world.parent.getEntityRegistry().resolveNetworkId(entity), entity.getPosition(), entity.getAnimationController().getCurrentAnimation()), false);
         }
     }
     public void announceEntityAdd(ServerEntity entity){
         GameServer server = this.world.parent;
-        server.getNetworkServer().broadcast(new AddEntityPacket(entity.entityId, server.getEntityRegistry().resolveNetworkId(entity), entity.getPosition()), socketUser -> isUserInWorld(socketUser, world), false);
+        server.getNetworkServer().broadcast(new AddEntityPacket(entity.entityId, server.getEntityRegistry().resolveNetworkId(entity), entity.getPosition(), entity.getAnimationController().getCurrentAnimation()), socketUser -> isUserInWorld(socketUser, world), false);
     }
     public void announceEntityRemove(ServerEntity entity){
         this.world.parent.getNetworkServer().broadcast(new RemoveEntityPacket(entity.entityId), socketUser -> isUserInWorld(socketUser, world), false);
     }
+    public void announceEntityAnimation(ServerEntity entity, String animation){
+        this.world.parent.getNetworkServer().broadcast(new EntityAnimationPacket(entity.entityId, animation), socketUser -> isUserInWorld(socketUser, world), false);
+    }
     public void announceWorldChange(ServerEntity entity, ServerWorld oldWorld, ServerWorld newWorld){
-        this.world.parent.getNetworkServer().broadcast(new AddEntityPacket(entity.entityId, world.parent.getEntityRegistry().resolveNetworkId(entity), entity.getPosition()), socketUser -> isUserInWorld(socketUser, newWorld), false);
+        this.world.parent.getNetworkServer().broadcast(new AddEntityPacket(entity.entityId, world.parent.getEntityRegistry().resolveNetworkId(entity), entity.getPosition(), entity.getAnimationController().getCurrentAnimation()), socketUser -> isUserInWorld(socketUser, newWorld), false);
         this.world.parent.getNetworkServer().broadcast(new RemoveEntityPacket(entity.entityId), socketUser -> isUserInWorld(socketUser, oldWorld), false);
     }
     private static boolean isUserInWorld(SocketUser socketUser, ServerWorld world){

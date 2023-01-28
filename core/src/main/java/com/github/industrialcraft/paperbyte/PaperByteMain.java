@@ -216,7 +216,7 @@ public class PaperByteMain extends ApplicationAdapter implements InputProcessor 
 			}
 			if(msg instanceof AddEntityPacket addEntityPacket){
 				System.out.println("addentity" + entityRegistry);
-				clientEntities.put(addEntityPacket.entityId, new ClientEntity(addEntityPacket.entityId, entityRegistry.get(addEntityPacket.entityType), addEntityPacket.position));
+				clientEntities.put(addEntityPacket.entityId, new ClientEntity(addEntityPacket.entityId, entityRegistry.get(addEntityPacket.entityType), addEntityPacket.position, addEntityPacket.animation));
 			}
 			if(msg instanceof RemoveEntityPacket removeEntityPacket){
 				clientEntities.remove(removeEntityPacket.entityId);

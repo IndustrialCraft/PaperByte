@@ -23,12 +23,14 @@ public abstract class ServerEntity {
     private ServerWorld world;
     private boolean isRemoved;
     private Body physicsBody;
+    private AnimationController animationController;
     public ServerEntity(Position position, ServerWorld world) {
         this.entityId = ENTITY_ID_GENERATOR.incrementAndGet();
         this.uuid = UUID.randomUUID();
         this.position = position;
         this.world = world;
         this.isRemoved = false;
+        this.animationController = createAnimationController();
         this.world.addEntity(this);
         this.world.worldPacketAnnouncer.announceEntityAdd(this);
 
@@ -39,11 +41,12 @@ public abstract class ServerEntity {
         }
     }
     public ServerEntity(DataInputStream stream, ServerWorld world) throws IOException {
-        this.entityId = stream.readInt();
+        this.entityId = ENTITY_ID_GENERATOR.incrementAndGet();
         this.uuid = new UUID(stream.readLong(), stream.readLong());
         this.position = Position.fromStream(stream);
         this.world = world;
         this.isRemoved = false;
+        this.animationController = createAnimationController();
         this.world.addEntity(this);
         this.world.worldPacketAnnouncer.announceEntityAdd(this);
 
@@ -51,13 +54,20 @@ public abstract class ServerEntity {
         if(this.physicsBody != null)
             this.physicsBody.setTransform(position.x(), position.y(), this.physicsBody.getAngle());
     }
-    public Body createPhysicsBody(World world){
+    public AnimationController getAnimationController() {
+        return animationController;
+    }
+    protected AnimationController createAnimationController(){
+        return new AnimationController(this);
+    }
+    protected Body createPhysicsBody(World world){
         return null;
     }
     public Body getPhysicsBody() {
         return physicsBody;
     }
     public void tick(){
+        this.animationController.tick();
         if(this.physicsBody != null) {
             if(scheduledBodyPosition != null) {
                 physicsBody.setTransform(scheduledBodyPosition.x(), scheduledBodyPosition.y(), physicsBody.getAngle());
@@ -99,7 +109,6 @@ public abstract class ServerEntity {
         }
     }
     public void toStream(DataOutputStream stream) throws IOException {
-        stream.writeInt(this.entityId);
         stream.writeLong(uuid.getMostSignificantBits());
         stream.writeLong(uuid.getLeastSignificantBits());
         this.position.toStream(stream);
