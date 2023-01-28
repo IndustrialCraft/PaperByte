@@ -23,14 +23,14 @@ public class ClientEntity {
         this.time = 0;
     }
     public void render(SpriteBatch batch, Map<Identifier, Node> entityNodes){
-        if(entityNodes.containsKey(type)){
+        if(entityNodes.containsKey(type) && entityNodes.get(type).animations.get(animation) != null){
             if(entityNodes.get(type).animations.get(animation).didAnimationEnd(time)){
                 time = 0;
             }
             entityNodes.get(type).drawRecursively(new Transform(position.x()*PaperByteMain.METER_TO_PIXEL, position.y()*PaperByteMain.METER_TO_PIXEL, 0, 1, 1), batch, animation, time);
         } else {
             //System.out.println("rendering: " + entityId + ":" + type.toString());
-            PaperByteMain.FONT.draw(batch, "" + entityId, position.x() * PaperByteMain.METER_TO_PIXEL, position.y() * PaperByteMain.METER_TO_PIXEL);
+            PaperByteMain.FONT.draw(batch, entityId + ":" + animation, position.x() * PaperByteMain.METER_TO_PIXEL, position.y() * PaperByteMain.METER_TO_PIXEL);
             PaperByteMain.FONT.draw(batch, type.toString(), position.x() * PaperByteMain.METER_TO_PIXEL, (position.y() + 1) * PaperByteMain.METER_TO_PIXEL);
         }
         time += Gdx.graphics.getDeltaTime();

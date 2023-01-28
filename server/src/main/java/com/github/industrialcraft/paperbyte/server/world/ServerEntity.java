@@ -51,8 +51,10 @@ public abstract class ServerEntity {
         this.world.worldPacketAnnouncer.announceEntityAdd(this);
 
         this.physicsBody = createPhysicsBody(world.getPhysicsWorld());
-        if(this.physicsBody != null)
+        if(this.physicsBody != null) {
             this.physicsBody.setTransform(position.x(), position.y(), this.physicsBody.getAngle());
+            this.physicsBody.setUserData(this);
+        }
     }
     public AnimationController getAnimationController() {
         return animationController;
