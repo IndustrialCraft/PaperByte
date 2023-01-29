@@ -53,12 +53,15 @@ public class PaperByteMain extends ApplicationAdapter implements InputProcessor 
 	private float scrollY;
 	private List<ServerCollisionsDebugPacket.RenderData> collisionRenderData;
 	private int collisionRenderDataInvalidationTimer;
+	private List<ParticleSystem> particleSystems;
+	private final Random random;
 	private final String host;
 	private final int port;
 	public PaperByteMain(CustomAPI customAPI, String host, int port) {
 		this.customAPI = customAPI;
 		this.host = host;
 		this.port = port;
+		this.random = new Random();
 	}
 	@Override
 	public void create() {
@@ -81,6 +84,10 @@ public class PaperByteMain extends ApplicationAdapter implements InputProcessor 
 		this.collisionRenderData = null;
 		this.collisionRenderDataInvalidationTimer = -1;
 		this.imageTextures = new HashMap<>();
+		this.particleSystems = new ArrayList<>();
+	}
+	public Random getRandom() {
+		return random;
 	}
 	public Map<Identifier, Texture> getImageTextures() {
 		return imageTextures;
@@ -150,6 +157,12 @@ public class PaperByteMain extends ApplicationAdapter implements InputProcessor 
 			}
 			shapeRenderer.end();
 		}
+		particleSystems.removeIf(ParticleSystem::shouldRemove);
+		batch.begin();
+		for(ParticleSystem particleSystem : particleSystems){
+			particleSystem.render(batch);
+		}
+		batch.end();
 		this.gui.draw();
 		this.playingSounds.values().removeIf(soundWithID -> !customAPI.isPlaying((int) soundWithID.id()));
 		//todo: sound volume based on distance
@@ -258,6 +271,9 @@ public class PaperByteMain extends ApplicationAdapter implements InputProcessor 
 			if(msg instanceof ServerCollisionsDebugPacket serverCollisionsDebugPacket){
 				collisionRenderData = serverCollisionsDebugPacket.data;
 				collisionRenderDataInvalidationTimer = 10;
+			}
+			if(msg instanceof ParticleSystemPacket particleSystemPacket){
+				particleSystems.add(new ParticleSystem(PaperByteMain.this, particleSystemPacket));
 			}
 		}
 		@Override

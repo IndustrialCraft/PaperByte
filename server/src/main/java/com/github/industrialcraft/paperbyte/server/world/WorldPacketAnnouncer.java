@@ -94,6 +94,9 @@ public class WorldPacketAnnouncer {
         this.world.parent.getNetworkServer().broadcast(new AddEntityPacket(entity.entityId, world.parent.getEntityRegistry().resolveNetworkId(entity), entity.getPosition(), entity.getAnimationController().getCurrentAnimation()), socketUser -> isUserInWorld(socketUser, newWorld), false);
         this.world.parent.getNetworkServer().broadcast(new RemoveEntityPacket(entity.entityId), socketUser -> isUserInWorld(socketUser, oldWorld), false);
     }
+    public void sendToEveryoneInWorld(Object message, boolean flush){
+        this.world.parent.getNetworkServer().broadcast(message, socketUser -> isUserInWorld(socketUser, world), flush);
+    }
     private static boolean isUserInWorld(SocketUser socketUser, ServerWorld world){
         return socketUser.getUserData() != null && socketUser.<SocketUserData>getUserData().getPlayerEntity() != null && socketUser.<SocketUserData>getUserData().getPlayerEntity().getWorld() == world;
     }

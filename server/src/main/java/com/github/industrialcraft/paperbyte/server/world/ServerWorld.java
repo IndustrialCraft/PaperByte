@@ -1,7 +1,11 @@
 package com.github.industrialcraft.paperbyte.server.world;
 
 import com.badlogic.gdx.physics.box2d.*;
+import com.github.industrialcraft.paperbyte.common.gui.ImageUIComponent;
+import com.github.industrialcraft.paperbyte.common.net.ParticleSystemPacket;
 import com.github.industrialcraft.paperbyte.common.net.ServerCollisionsDebugPacket;
+import com.github.industrialcraft.paperbyte.common.util.Position;
+import com.github.industrialcraft.paperbyte.common.util.Range;
 import com.github.industrialcraft.paperbyte.server.GameServer;
 import com.github.industrialcraft.paperbyte.server.events.CreateWorldEvent;
 import com.github.industrialcraft.paperbyte.server.events.WorldTickEvent;
@@ -57,6 +61,9 @@ public class ServerWorld {
 
             }
         });
+    }
+    public void addParticle(ImageUIComponent.Image image, Position position, int count, Range velocityX, Range velocityY, float gravity, Range lifetime){
+        worldPacketAnnouncer.sendToEveryoneInWorld(new ParticleSystemPacket(image, position, count, velocityX, velocityY, gravity, lifetime), false);
     }
     public void tick(){
         this.entities.addAll(entitiesToAdd);

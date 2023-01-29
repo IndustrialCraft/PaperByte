@@ -17,6 +17,7 @@ public class MessageRegistryCreator {
         messageRegistry.register(10, SetGUIPacket.createDescriptor());
         messageRegistry.register(11, ServerCollisionsDebugPacket.createDescriptor());
         messageRegistry.register(12, ClientLoginPacket.createDescriptor());
+        messageRegistry.register(13, ParticleSystemPacket.createDescriptor());
         return messageRegistry;
     }
 }
