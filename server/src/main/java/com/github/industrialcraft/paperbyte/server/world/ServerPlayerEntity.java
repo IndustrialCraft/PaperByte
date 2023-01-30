@@ -15,15 +15,19 @@ public abstract class ServerPlayerEntity extends ServerEntity {
     private boolean shouldResyncUI;
     private boolean sendHitBoxes;
     private ClientInputPacket lastInput;
-    public ServerPlayerEntity(Position position, ServerWorld world, SocketUserData socketUserData) {
+    private final String username;
+    public ServerPlayerEntity(Position position, ServerWorld world, SocketUserData socketUserData, String username) {
         super(position, world);
         this.socketUserData = socketUserData;
+        this.username = username;
         this.cameraZoom = 1;
         markUIDirty();
         this.sendHitBoxes = false;
         this.lastInput = null;
     }
-
+    public String getUsername() {
+        return username;
+    }
     @Override
     public void tick() {
         super.tick();

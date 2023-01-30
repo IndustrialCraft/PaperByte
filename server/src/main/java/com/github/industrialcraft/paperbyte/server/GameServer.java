@@ -3,10 +3,7 @@ package com.github.industrialcraft.paperbyte.server;
 import com.github.industrialcraft.netx.NetXServer;
 import com.github.industrialcraft.netx.ServerMessage;
 import com.github.industrialcraft.netx.SocketUser;
-import com.github.industrialcraft.paperbyte.common.gui.ImageUIComponent;
 import com.github.industrialcraft.paperbyte.common.net.*;
-import com.github.industrialcraft.paperbyte.common.util.Position;
-import com.github.industrialcraft.paperbyte.common.util.Range;
 import com.github.industrialcraft.paperbyte.server.events.*;
 import com.github.industrialcraft.paperbyte.server.world.EntityRegistry;
 import com.github.industrialcraft.paperbyte.server.world.ServerPlayerEntity;
@@ -146,7 +143,7 @@ public class GameServer extends Thread{
                     SocketUserData socketUserData = new SocketUserData(user);
                     user.setUserData(socketUserData);
                     System.out.println(clientLoginPacket.locale);
-                    PlayerJoinEvent joinEvent = new PlayerJoinEvent(GameServer.this, socketUserData, clientLoginPacket.locale);
+                    PlayerJoinEvent joinEvent = new PlayerJoinEvent(GameServer.this, socketUserData, clientLoginPacket.locale, clientLoginPacket.username);
                     EventManager.callEvent(joinEvent);
                     if(joinEvent.playerSupplier == null){
                         user.disconnect();

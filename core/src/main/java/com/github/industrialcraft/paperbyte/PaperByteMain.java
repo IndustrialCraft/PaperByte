@@ -57,10 +57,12 @@ public class PaperByteMain extends ApplicationAdapter implements InputProcessor 
 	private final Random random;
 	private final String host;
 	private final int port;
-	public PaperByteMain(CustomAPI customAPI, String host, int port) {
+	private final String username;
+	public PaperByteMain(CustomAPI customAPI, String host, int port, String username) {
 		this.customAPI = customAPI;
 		this.host = host;
 		this.port = port;
+		this.username = username;
 		this.random = new Random();
 	}
 	@Override
@@ -208,7 +210,7 @@ public class PaperByteMain extends ApplicationAdapter implements InputProcessor 
 	private ClientMessage.Visitor CLIENT_MESSAGE_VISITOR = new ClientMessage.Visitor() {
 		@Override
 		public void connect(NetXClient user) {
-			user.send(new ClientLoginPacket(Locale.getDefault().toString()));
+			user.send(new ClientLoginPacket(Locale.getDefault().toString(), username));
 		}
 		@Override
 		public void disconnect(NetXClient user) {

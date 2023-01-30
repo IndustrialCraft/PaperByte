@@ -16,10 +16,12 @@ public class PlayerJoinEvent extends ServerEvent {
     public Position position;
     public final ArrayList<Object> joinData;
     public final String locale;
-    public PlayerJoinEvent(GameServer server, SocketUserData socketUserData, String locale) {
+    public final String username;
+    public PlayerJoinEvent(GameServer server, SocketUserData socketUserData, String locale, String username) {
         super(server);
         this.socketUserData = socketUserData;
         this.locale = locale;
+        this.username = username;
         this.joinData = new ArrayList<>();
         this.playerSupplier = null;
         this.world = null;
